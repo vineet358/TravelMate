@@ -270,152 +270,268 @@ function handleFindPathClick() {
                 });
             });
         }
+       
 
-        // Populate dropdown menus with location data
-        function populateLocationDropdowns() {
-            const sourceDropdown = document.getElementById('sourceLocation');
-            const destinationDropdown = document.getElementById('destinationLocation');
-            
-            // Clear existing options
-            sourceDropdown.innerHTML = '<option value="">Select Source Location</option>';
-            destinationDropdown.innerHTML = '<option value="">Select Destination Location</option>';
-            
-            // Add locations from the data file
-            haldwaniData.nodes.forEach(location => {
-                // Create options for source dropdown
-                const sourceOption = document.createElement('option');
-                sourceOption.value = location.id;
-                sourceOption.textContent = location.name;
-                sourceDropdown.appendChild(sourceOption);
-                
-                // Create options for destination dropdown
-                const destOption = document.createElement('option');
-                destOption.value = location.id;
-                destOption.textContent = location.name;
-                destinationDropdown.appendChild(destOption);
-            });
-        }
-         
+
+// Display selected location details below the dropdowns
+function displaySelectedLocationInfo(type, locationId) {
+    // Get the container element for location info
+    const locationInfoContainer = document.getElementById(`${type}LocationInfo`);
+    
+    if (!locationId || locationId === "") {
+        // Clear the location info if no location is selected
+        locationInfoContainer.innerHTML = "";
+        locationInfoContainer.style.display = "none";
+        return;
+    }
+    
+    // Find the selected location in our data
+    const selectedLocation = haldwaniData.nodes.find(loc => loc.id === locationId);
+    
+    if (selectedLocation) {
+        // Create and display location information
+        locationInfoContainer.innerHTML = `
+            <div class="location-info-card">
+                <h4>${selectedLocation.name}</h4>
+                <p>
+                    <strong>Coordinates:</strong> 
+                    ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}
+                </p>
+            </div>
+        `;
+        locationInfoContainer.style.display = "block";
+    }
+}
+
+// Modify the updateSelectedLocation function to display location info
+function updateSelectedLocation(type, locationId) {
+    if (!locationId) return;
+    
+    // Find the selected location in our data
+    const selectedLocation = haldwaniData.nodes.find(loc => loc.id === locationId);
+    
+    if (selectedLocation) {
+        const position = { 
+            lat: selectedLocation.lat, 
+            lng: selectedLocation.lng 
+        };
         
-        // Update the map when a location is selected from dropdowns
-        function updateSelectedLocation(type, locationId) {
-            if (!locationId) return;
-            
-            // Find the selected location in our data
-            const selectedLocation = haldwaniData.nodes.find(loc => loc.id === locationId);
-            
-            if (selectedLocation) {
-                const position = { 
-                    lat: selectedLocation.lat, 
-                    lng: selectedLocation.lng 
-                };
-                
-                // Place marker based on type
-                placeMarker(position, type);
-                
-                // Center map on the selected location
-                map.setView([position.lat, position.lng], 15);
-                
-                // If both source and destination are selected, calculate route
-                if (sourceMarker && destinationMarker) {
-                    handleFindPathClick();
-                }
-            }
+        // Place marker based on type
+        placeMarker(position, type);
+        
+        // Center map on the selected location
+        map.setView([position.lat, position.lng], 15);
+        
+        // Display location information below dropdown
+        displaySelectedLocationInfo(type, locationId);
+        
+        // If both source and destination are selected, calculate route
+        if (sourceMarker && destinationMarker) {
+            handleFindPathClick();
         }
+    }
+}
 
-        // Place a marker on the map (source or destination)
-        function placeMarker(position, type) {
-            // Remove previous marker of the same type if it exists
-            if (type === 'source' && sourceMarker) {
-                map.removeLayer(sourceMarker);
-                sourceMarker = null;
-            } else if (type === 'destination' && destinationMarker) {
-                map.removeLayer(destinationMarker);
-                destinationMarker = null;
-            }
-            
-            // Create the marker with appropriate icon
-            const marker = L.marker([position.lat, position.lng], {
-                icon: markerIcons[type],
-                draggable: true // Make markers draggable
-            }).addTo(map);
-            const popupContent = document.createElement('div');
-            popupContent.className = 'info-window';
-            
-            // Add content based on type
-            if (type === 'source') {
-                popupContent.innerHTML = `
-                    <h3>Source Location</h3>
-                    <p>Latitude: ${position.lat.toFixed(6)}</p>
-                    <p>Longitude: ${position.lng.toFixed(6)}</p>
-                `;
-                
-                // Find nearest known location
-                const nearestNode = findNearestNode(position);
-                if (nearestNode) {
-                    popupContent.innerHTML += `
-                        <p>Nearest location: ${nearestNode.name}</p>
-                        <button class="snap-to-location" data-id="${nearestNode.id}" data-type="source">Snap to ${nearestNode.name}</button>
-                    `;
-                }
-            } else {
-                popupContent.innerHTML = `
-                    <h3>Destination Location</h3>
-                    <p>Latitude: ${position.lat.toFixed(6)}</p>
-                    <p>Longitude: ${position.lng.toFixed(6)}</p>
-                `;
-                
-                // Find nearest known location
-                const nearestNode = findNearestNode(position);
-                if (nearestNode) {
-                    popupContent.innerHTML += `
-                        <p>Nearest location: ${nearestNode.name}</p>
-                        <button class="snap-to-location" data-id="${nearestNode.id}" data-type="destination">Snap to ${nearestNode.name}</button>
-                    `;
-                }
-            }
-            
-            // Bind the popup to the marker
-            marker.bindPopup(popupContent);
-            
-            // Add event listener for the snap button (will be added when popup is opened)
-            marker.on('popupopen', function() {
-                const snapButton = document.querySelector('.snap-to-location');
-                if (snapButton) {
-                    snapButton.addEventListener('click', function() {
-                        const nodeId = this.dataset.id;
-                        const markerType = this.dataset.type;
-                        const node = haldwaniData.nodes.find(n => n.id === nodeId);
-                        
-                        // Update dropdown selection
-                        document.getElementById(`${markerType}Location`).value = nodeId;
-                        
-                        // Update marker position
-                        updateSelectedLocation(markerType, nodeId);
-                        
-                        // Close popup
-                        marker.closePopup();
-                    });
-                }
-            });
-            
-            // Handle marker drag end event
-            marker.on('dragend', function() {
-                // Recalculate route if both markers are present
-                if (sourceMarker && destinationMarker) {
-                    handleFindPathClick();
-                }
-            });
-            
-            // Store the marker in appropriate variable
-            if (type === 'source') {
-                sourceMarker = marker;
-                document.getElementById('sourceLocation').value = ''; // Clear dropdown
-            } else {
-                destinationMarker = marker;
-                document.getElementById('destinationLocation').value = ''; // Clear dropdown
-            }
+// Update both dropdown event listeners to call displaySelectedLocationInfo
+function setupLocationDropdowns() {
+    // Source dropdown event listener
+    document.getElementById('sourceLocation').addEventListener('change', function() {
+        const selectedLocationId = this.value;
+        updateSelectedLocation('source', selectedLocationId);
+    });
+    
+    // Destination dropdown event listener
+    document.getElementById('destinationLocation').addEventListener('change', function() {
+        const selectedLocationId = this.value;
+        updateSelectedLocation('destination', selectedLocationId);
+    });
+}
+
+// Modify the populateLocationDropdowns function to also create info containers
+function populateLocationDropdowns() {
+    const sourceDropdown = document.getElementById('sourceLocation');
+    const destinationDropdown = document.getElementById('destinationLocation');
+    
+    // Clear existing options
+    sourceDropdown.innerHTML = '<option value="">Select Source Location</option>';
+    destinationDropdown.innerHTML = '<option value="">Select Destination Location</option>';
+    
+    // Add locations from the data file
+    haldwaniData.nodes.forEach(location => {
+        // Create options for source dropdown
+        const sourceOption = document.createElement('option');
+        sourceOption.value = location.id;
+        sourceOption.textContent = location.name;
+        sourceDropdown.appendChild(sourceOption);
+        
+        // Create options for destination dropdown
+        const destOption = document.createElement('option');
+        destOption.value = location.id;
+        destOption.textContent = location.name;
+        destinationDropdown.appendChild(destOption);
+    });
+    
+    // Create containers for location information if they don't exist
+    if (!document.getElementById('sourceLocationInfo')) {
+        const sourceInfoContainer = document.createElement('div');
+        sourceInfoContainer.id = 'sourceLocationInfo';
+        sourceInfoContainer.className = 'location-info-container';
+        sourceInfoContainer.style.display = 'none';
+        sourceDropdown.parentNode.insertBefore(sourceInfoContainer, sourceDropdown.nextSibling);
+    }
+    
+    if (!document.getElementById('destinationLocationInfo')) {
+        const destInfoContainer = document.createElement('div');
+        destInfoContainer.id = 'destinationLocationInfo';
+        destInfoContainer.className = 'location-info-container';
+        destInfoContainer.style.display = 'none';
+        destinationDropdown.parentNode.insertBefore(destInfoContainer, destinationDropdown.nextSibling);
+    }
+    
+    // Setup event listeners for dropdowns
+    setupLocationDropdowns();
+}
+
+// Modify placeMarker to update location info when a marker is placed or dragged
+function placeMarker(position, type) {
+    // Remove previous marker of the same type if it exists
+    if (type === 'source' && sourceMarker) {
+        map.removeLayer(sourceMarker);
+        sourceMarker = null;
+    } else if (type === 'destination' && destinationMarker) {
+        map.removeLayer(destinationMarker);
+        destinationMarker = null;
+    }
+    
+    // Create the marker with appropriate icon
+    const marker = L.marker([position.lat, position.lng], {
+        icon: markerIcons[type],
+        draggable: true // Make markers draggable
+    }).addTo(map);
+    
+    const popupContent = document.createElement('div');
+    popupContent.className = 'info-window';
+    
+    // Add content based on type
+    if (type === 'source') {
+        popupContent.innerHTML = `
+            <h3>Source Location</h3>
+            <p>Latitude: ${position.lat.toFixed(6)}</p>
+            <p>Longitude: ${position.lng.toFixed(6)}</p>
+        `;
+        
+        // Find nearest known location
+        const nearestNode = findNearestNode(position);
+        if (nearestNode) {
+            popupContent.innerHTML += `
+                <p>Nearest location: ${nearestNode.name}</p>
+                <button class="snap-to-location" data-id="${nearestNode.id}" data-type="source">Snap to ${nearestNode.name}</button>
+            `;
         }
+    } else {
+        popupContent.innerHTML = `
+            <h3>Destination Location</h3>
+            <p>Latitude: ${position.lat.toFixed(6)}</p>
+            <p>Longitude: ${position.lng.toFixed(6)}</p>
+        `;
+        
+        // Find nearest known location
+        const nearestNode = findNearestNode(position);
+        if (nearestNode) {
+            popupContent.innerHTML += `
+                <p>Nearest location: ${nearestNode.name}</p>
+                <button class="snap-to-location" data-id="${nearestNode.id}" data-type="destination">Snap to ${nearestNode.name}</button>
+            `;
+        }
+    }
+    
+    // Bind the popup to the marker
+    marker.bindPopup(popupContent);
+    
+    // Add event listener for the snap button (will be added when popup is opened)
+    marker.on('popupopen', function() {
+        const snapButton = document.querySelector('.snap-to-location');
+        if (snapButton) {
+            snapButton.addEventListener('click', function() {
+                const nodeId = this.dataset.id;
+                const markerType = this.dataset.type;
+                const node = haldwaniData.nodes.find(n => n.id === nodeId);
+                
+                // Update dropdown selection
+                document.getElementById(`${markerType}Location`).value = nodeId;
+                
+                // Update marker position
+                updateSelectedLocation(markerType, nodeId);
+                
+                // Close popup
+                marker.closePopup();
+            });
+        }
+    });
+    
+    // Handle marker drag end event
+    marker.on('dragend', function() {
+        const newPos = marker.getLatLng();
+        
+        // Update location info with custom coordinates
+        const locationInfoContainer = document.getElementById(`${type}LocationInfo`);
+        locationInfoContainer.innerHTML = `
+            <div class="location-info-card">
+                <h4>Custom Location</h4>
+                <p>
+                    <strong>Coordinates:</strong> 
+                    ${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}
+                </p>
+            </div>
+        `;
+        locationInfoContainer.style.display = "block";
+        
+        // Clear dropdown selection
+        document.getElementById(`${type}Location`).value = '';
+        
+        // Recalculate route if both markers are present
+        if (sourceMarker && destinationMarker) {
+            handleFindPathClick();
+        }
+    });
+    
+    // Store the marker in appropriate variable
+    if (type === 'source') {
+        sourceMarker = marker;
+        
+        // If custom location (not from dropdown), show custom location info
+        if (document.getElementById('sourceLocation').value === '') {
+            const locationInfoContainer = document.getElementById('sourceLocationInfo');
+            locationInfoContainer.innerHTML = `
+                <div class="location-info-card">
+                    <h4>Custom Location</h4>
+                    <p>
+                        <strong>Coordinates:</strong> 
+                        ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}
+                    </p>
+                </div>
+            `;
+            locationInfoContainer.style.display = "block";
+        }
+    } else {
+        destinationMarker = marker;
+        
+        // If custom location (not from dropdown), show custom location info
+        if (document.getElementById('destinationLocation').value === '') {
+            const locationInfoContainer = document.getElementById('destinationLocationInfo');
+            locationInfoContainer.innerHTML = `
+                <div class="location-info-card">
+                    <h4>Custom Location</h4>
+                    <p>
+                        <strong>Coordinates:</strong> 
+                        ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}
+                    </p>
+                </div>
+            `;
+            locationInfoContainer.style.display = "block";
+        }
+    }
+}
 
         // Find the nearest node in our data to the given position
         function findNearestNode(position) {
@@ -613,86 +729,7 @@ function displayRouteFromAPI(routeData) {
             `;
         }
 
-        // Setup POI (Points of Interest) filters
-        function setupPOIFilters() {
-            const poiFiltersDiv = document.getElementById('poiFilters');
-            
-            // Define POI categories
-            const poiCategories = [
-                { type: 'restaurant', name: 'Restaurants' },
-                { type: 'cafe', name: 'Cafes' },
-                { type: 'hotel', name: 'Hotels' },
-                { type: 'atm', name: 'ATMs' },
-                { type: 'hospital', name: 'Hospitals' },
-                { type: 'school', name: 'Schools' },
-            
-
-            ];
-            
-            // Create filter HTML
-            poiFiltersDiv.innerHTML = `
-                <h3>Nearby Points of Interest</h3>
-                <div class="poi-type-group">
-                    ${poiCategories.map(category => `
-                        <div class="filter-item">
-                            <input type="checkbox" id="poi-${category.type}" data-poi-type="${category.type}">
-                            <label for="poi-${category.type}">${category.name}</label>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="filter-actions">
-                    <button id="applyFiltersBtn">Apply Filters</button>
-                    <button id="clearFiltersBtn">Clear All</button>
-                </div>
-            `;
-            
-            // Add event listeners for filter buttons
-            document.getElementById('applyFiltersBtn').addEventListener('click', applyPOIFilters);
-            document.getElementById('clearFiltersBtn').addEventListener('click', clearPOIFilters);
-        }
-
-        // Apply POI filters
-        function applyPOIFilters() {
-            // Get all checked POI types
-            const checkedPOIs = document.querySelectorAll('input[data-poi-type]:checked');
-            activePOITypes = Array.from(checkedPOIs).map(input => input.dataset.poiType);
-            
-            // Re-fetch POIs if we have a route
-            if (routeLayer.getLayers().length > 0) {
-                const routeLayer = routeLayer.getLayers()[0];
-                if (routeLayer) {
-                    const routePoints = routeLayer.getLatLngs();
-                    fetchPOIsAlongRoute(routePoints);
-                }
-            }
-        }
-
-        // Clear all POI filters
-        function clearPOIFilters() {
-            // Uncheck all POI type checkboxes
-            document.querySelectorAll('input[data-poi-type]').forEach(input => {
-                input.checked = false;
-            });
-            
-            // Clear active POI types
-            activePOITypes = [];
-            
-            // Clear POI display
-            document.getElementById('poiContainer').innerHTML = '';
-            
-            // Remove POI markers from map
-            markers.forEach(marker => {
-                if (marker !== sourceMarker && marker !== destinationMarker) {
-                    map.removeLayer(marker);
-                }
-            });
-            
-            // Keep only source and destination markers
-            markers = markers.filter(marker => marker === sourceMarker || marker === destinationMarker);
-        }
-
-        // Fetch POIs along the route function fetchPOIsAlongRoute(routePoints) { // Clear previous POIs document.getElementById('poiContainer').innerHTML = '<div class="poi-loading">Loading nearby points of interest...</div>'; // Remove previous POI
-
+   
 
 
 
@@ -837,10 +874,10 @@ function fetchPOIsAlongRoute(routePoints) {
 // Filter POIs by proximity to route or source/destination
 function filterPOIsByProximity(pois, routeData) {
     // Maximum distance (in km) a POI can be from the route to be included
-    const MAX_DISTANCE_TO_ROUTE = 0.3; // 300 meters
+    const MAX_DISTANCE_TO_ROUTE = 0.08; 
     
     // Maximum distance (in km) a POI can be from source/destination
-    const MAX_DISTANCE_TO_ENDPOINT = 0.5; // 500 meters
+    const MAX_DISTANCE_TO_ENDPOINT = 0.08; 
     
     return pois.filter(poi => {
         // First check if this is one of our desired POI types
@@ -1107,7 +1144,7 @@ function processOverpassResponse(data) {
                 lat: lat,
                 lng: lng,
                 address: address,
-                rating: rating
+               
             });
         });
     }
@@ -1146,7 +1183,7 @@ function displayPOIs(pois) {
         poiItem.innerHTML = `
             <div class="poi-name">${poi.name}</div>
             <div class="poi-address">${poi.address}</div>
-            <div class="poi-rating">★ ${poi.rating || '4.0'}</div>
+          
             <div class="poi-type">${poi.type.charAt(0).toUpperCase() + poi.type.slice(1)}</div>
             <button class="poi-directions-btn">Get Directions</button>
         `;
@@ -1204,7 +1241,6 @@ function displayPOIs(pois) {
         popupContent.innerHTML = `
             <h3>${poi.name}</h3>
             <p>${poi.address}</p>
-            <p>Rating: ★ ${poi.rating || '4.0'}</p>
             <p>Type: ${poi.type.charAt(0).toUpperCase() + poi.type.slice(1)}</p>
             <button class="set-as-destination">Set as Destination</button>
         `;

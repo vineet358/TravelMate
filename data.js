@@ -60,7 +60,22 @@ const haldwaniData = {
     { id: "n57", name: "Talli Bamori", lat: 29.2401, lng: 79.5205 },
     { id: "n58", name: "Naveen Nagar", lat: 29.2195, lng: 79.4893 },
     { id: "n59", name: "Teenpani Bypass", lat: 29.2321, lng: 79.4874 },
-    { id: "n60", name: "Kaladhungi Road", lat: 29.1975, lng: 79.5216 }
+    { id: "n60", name: "Kaladhungi Road", lat: 29.1975, lng: 79.5216 },
+    { id: "n61", name: "District Hospital", lat: 29.2124, lng: 79.5143 },
+    { id: "n62", name: "Gaulapar Industrial Area", lat: 29.2335, lng: 79.5027 },
+    { id: "n63", name: "Motimahal Cinema", lat: 29.2186, lng: 79.5128 },
+    { id: "n64", name: "Ghorakhal Tea Factory", lat: 29.2462, lng: 79.5396 },
+    { id: "n65", name: "Jyollikote Crossing", lat: 29.2560, lng: 79.5277 },
+    { id: "n66", name: "Dobhalwala Bridge", lat: 29.2150, lng: 79.4935 },
+    { id: "n67", name: "New Timber Market", lat: 29.2294, lng: 79.5256 },
+    { id: "n68", name: "Rajiv Nagar", lat: 29.1941, lng: 79.5254 },
+    { id: "n69", name: "District Court Complex", lat: 29.2223, lng: 79.5182 },
+    { id: "n70", name: "Vishwakarma Industrial Estate", lat: 29.2082, lng: 79.4987 },
+    { id: "n71", name: "Durgapur Dam", lat: 29.2597, lng: 79.5209 },
+    { id: "n72", name: "Sidcul Commercial Belt", lat: 29.1914, lng: 79.5145 },
+    { id: "n73", name: "Sai Mandir Junction", lat: 29.2163, lng: 79.5269 },
+    { id: "n74", name: "Nainital Zoo Entrance", lat: 29.2050, lng: 79.5333 },
+    { id: "n75", name: "Ramnagar Highway Junction", lat: 29.2146, lng: 79.4875 }
     ],
     edges: [
         { source: "n1", target: "n3", distance: 0.5 },
@@ -234,7 +249,97 @@ const haldwaniData = {
     { source: "n51", target: "n56", distance: 1.4 },
     { source: "n53", target: "n60", distance: 1.2 },
     { source: "n54", target: "n57", distance: 1.3 },
-    { source: "n58", target: "n59", distance: 1.2 }
+    { source: "n58", target: "n59", distance: 1.2 },
+
+    // District Hospital connections
+    { source: "n61", target: "n2", distance: 0.3 },
+    { source: "n61", target: "n22", distance: 0.5 },
+    { source: "n61", target: "n23", distance: 0.4 },
+    
+    // Gaulapar Industrial Area connections
+    { source: "n62", target: "n7", distance: 0.6 },
+    { source: "n62", target: "n13", distance: 0.8 },
+    { source: "n62", target: "n33", distance: 0.5 },
+    
+    // Motimahal Cinema connections
+    { source: "n63", target: "n8", distance: 0.3 },
+    { source: "n63", target: "n9", distance: 0.5 },
+    { source: "n63", target: "n44", distance: 0.6 },
+    
+    // Ghorakhal Tea Factory connections
+    { source: "n64", target: "n14", distance: 1.2 },
+    { source: "n64", target: "n36", distance: 0.9 },
+    { source: "n64", target: "n41", distance: 0.7 },
+    
+    // Jyollikote Crossing connections
+    { source: "n65", target: "n14", distance: 1.0 },
+    { source: "n65", target: "n36", distance: 0.8 },
+    { source: "n65", target: "n45", distance: 0.7 },
+    
+    // Dobhalwala Bridge connections
+    { source: "n66", target: "n12", distance: 0.7 },
+    { source: "n66", target: "n38", distance: 0.5 },
+    { source: "n66", target: "n58", distance: 0.8 },
+    
+    // New Timber Market connections
+    { source: "n67", target: "n18", distance: 0.6 },
+    { source: "n67", target: "n19", distance: 0.5 },
+    { source: "n67", target: "n54", distance: 0.7 },
+    
+    // Rajiv Nagar connections
+    { source: "n68", target: "n17", distance: 0.8 },
+    { source: "n68", target: "n37", distance: 0.6 },
+    { source: "n68", target: "n60", distance: 0.9 },
+    
+    // District Court Complex connections
+    { source: "n69", target: "n3", distance: 0.3 },
+    { source: "n69", target: "n25", distance: 0.4 },
+    { source: "n69", target: "n49", distance: 0.5 },
+    
+    // Vishwakarma Industrial Estate connections
+    { source: "n70", target: "n12", distance: 0.6 },
+    { source: "n70", target: "n31", distance: 0.7 },
+    { source: "n70", target: "n46", distance: 0.9 },
+    
+    // Durgapur Dam connections
+    { source: "n71", target: "n15", distance: 1.3 },
+    { source: "n71", target: "n39", distance: 0.8 },
+    { source: "n71", target: "n45", distance: 0.6 },
+    
+    // Sidcul Commercial Belt connections
+    { source: "n72", target: "n40", distance: 0.7 },
+    { source: "n72", target: "n53", distance: 0.5 },
+    { source: "n72", target: "n60", distance: 0.8 },
+    
+    // Sai Mandir Junction connections
+    { source: "n73", target: "n4", distance: 0.4 },
+    { source: "n73", target: "n42", distance: 0.6 },
+    { source: "n73", target: "n55", distance: 0.5 },
+    
+    // Nainital Zoo Entrance connections
+    { source: "n74", target: "n17", distance: 0.4 },
+    { source: "n74", target: "n37", distance: 0.5 },
+    { source: "n74", target: "n56", distance: 0.8 },
+    
+    // Ramnagar Highway Junction connections
+    { source: "n75", target: "n38", distance: 0.5 },
+    { source: "n75", target: "n58", distance: 0.7 },
+    { source: "n75", target: "n59", distance: 0.9 },
+    
+    // Interconnections between new nodes
+    { source: "n61", target: "n63", distance: 0.6 },
+    { source: "n62", target: "n67", distance: 1.2 },
+    { source: "n63", target: "n69", distance: 0.5 },
+    { source: "n64", target: "n65", distance: 0.9 },
+    { source: "n66", target: "n70", distance: 0.8 },
+    { source: "n66", target: "n75", distance: 0.6 },
+    { source: "n67", target: "n71", distance: 1.5 },
+    { source: "n68", target: "n72", distance: 0.7 },
+    { source: "n68", target: "n74", distance: 0.8 },
+    { source: "n69", target: "n73", distance: 0.9 },
+    { source: "n70", target: "n75", distance: 0.6 },
+    { source: "n71", target: "n65", distance: 0.7 },
+    { source: "n72", target: "n74", distance: 1.0 },
+    { source: "n73", target: "n74", distance: 0.9 }
     ]
 };
-
