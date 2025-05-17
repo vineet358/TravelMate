@@ -19,6 +19,8 @@
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
+
+        
         
         <div class="form-group">
             <label for="destinationLocation">Destination Location:</label>
@@ -26,6 +28,14 @@
                 <option value="">Select Destination Location</option>
                 <!-- Options will be populated dynamically -->
             </select>
+        </div>
+
+        <div class="routing-algorithm-container">
+            <h3>Routing Algorithm</h3>
+            <div class="routing-algorithm-options">
+                <button id="apiRouteBtn" class="algorithm-btn active">Use API Routing</button>
+                <button id="dijkstraRouteBtn" class="algorithm-btn">Use Dijkstra Algorithm</button>
+            </div>
         </div>
         
         <div class="route-mode-selector">

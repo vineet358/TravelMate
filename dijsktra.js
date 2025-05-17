@@ -1,17 +1,22 @@
+// Function to calculate route using Dijkstra's algorithm
 function calculateRouteWithDijkstra(sourcePos, destPos) {
     const sourceNode = findNearestNode(sourcePos);
     const destNode = findNearestNode(destPos);
     
     if (!sourceNode || !destNode) {
         alert('Could not find suitable road network near selected points.');
+        document.getElementById('loadingIndicator').style.display = 'none';
         return;
     }
+    
+    console.log(`Calculating route using Dijkstra's algorithm from ${sourceNode.name} to ${destNode.name}`);
     
     // Run Dijkstra's algorithm
     const { distance, path } = dijkstraShortestPath(sourceNode.id, destNode.id);
     
     if (!path || path.length === 0) {
         alert('Could not find a path between the selected locations.');
+        document.getElementById('loadingIndicator').style.display = 'none';
         return;
     }
     
@@ -21,12 +26,33 @@ function calculateRouteWithDijkstra(sourcePos, destPos) {
         return [node.lat, node.lng];
     });
     
+    // Calculate estimated duration based on transportation mode
+    let speedFactor;
+    switch (currentRouteMode) {
+        case 'walking':
+            speedFactor = 5; // km/h for walking
+            break;
+        case 'cycling':
+            speedFactor = 15; // km/h for cycling
+            break;
+        case 'driving':
+        default:
+            speedFactor = 30; // km/h for driving
+            break;
+    }
+    
+    // Convert to minutes: (distance in km / speed in km/h) * 60 min/h
+    const duration = (distance / speedFactor) * 60;
+    
     // Display the route
     displayRoute({
         distance: distance,
-        duration: distance * 3, // Rough estimate: 20 km/h average speed
+        duration: duration,
         points: routePoints
     });
+    
+    // Hide loading indicator
+    document.getElementById('loadingIndicator').style.display = 'none';
 }
 
 // Dijkstra's algorithm for finding shortest path

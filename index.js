@@ -13,6 +13,7 @@
         let graph; // For storing the graph representation of the road network
         let activePOITypes = []; // For tracking active POI filters
         let currentRouteMode = "driving"; // Default route mode
+        let useApiRouting=true;
         
         // Marker icons
         const markerIcons = {
@@ -129,6 +130,14 @@
             document.getElementById('resetBtn').addEventListener('click', resetMap);
             document.getElementById('showAllLocationsBtn').addEventListener('click', showAllLocations);
             
+            // Algorithm selection buttons
+    document.getElementById('apiRouteBtn').addEventListener('click', function() {
+        setRoutingAlgorithm(true);
+    });
+    document.getElementById('dijkstraRouteBtn').addEventListener('click', function() {
+        setRoutingAlgorithm(false);
+    });
+    
             // Location selectors change handlers
             document.getElementById('sourceLocation').addEventListener('change', function() {
                 updateSelectedLocation('source', this.value);
@@ -157,10 +166,48 @@
                     }
                 });
             });
+
+            
             
             // Setup POI category filters
             setupPOIFilters();
         };
+
+        // Function to set the routing algorithm
+function setRoutingAlgorithm(useApi) {
+    useApiRouting = useApi;
+    
+    // Update UI to show active button
+    document.getElementById('apiRouteBtn').classList.toggle('active', useApi);
+    document.getElementById('dijkstraRouteBtn').classList.toggle('active', !useApi);
+    
+    // Recalculate route if both source and destination are set
+    if (sourceMarker && destinationMarker) {
+        handleFindPathClick();
+    }
+}
+// Update the handleFindPathClick function
+function handleFindPathClick() {
+    // Make sure we have both source and destination
+    if (!sourceMarker || !destinationMarker) {
+        alert('Please select both source and destination locations');
+        return;
+    }
+    
+    // Show loading indicator
+    document.getElementById('loadingIndicator').style.display = 'block';
+    
+    // Get source and destination positions
+    const sourcePos = sourceMarker.getLatLng();
+    const destPos = destinationMarker.getLatLng();
+    
+    // Use appropriate routing method based on user selection
+    if (useApiRouting) {
+        calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
+    } else {
+        calculateRouteWithDijkstra(sourcePos, destPos);
+    }
+}
 
         // Initialize the Leaflet Map centered on Haldwani
         function initMap() {
@@ -249,25 +296,7 @@
             });
         }
 
-        // Handle find path button click
-        function handleFindPathClick() {
-            // Make sure we have both source and destination
-            if (!sourceMarker || !destinationMarker) {
-                alert('Please select both source and destination locations');
-                return;
-            }
-            
-            // Show loading indicator
-            document.getElementById('loadingIndicator').style.display = 'block';
-            
-            // Get source and destination positions
-            const sourcePos = sourceMarker.getLatLng();
-            const destPos = destinationMarker.getLatLng();
-            
-            // Calculate route using OpenRouteService API
-            calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
-        }
-
+        
         // Update the map when a location is selected from dropdowns
         function updateSelectedLocation(type, locationId) {
             if (!locationId) return;
