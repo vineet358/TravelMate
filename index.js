@@ -295,7 +295,7 @@ function handleFindPathClick() {
                 destinationDropdown.appendChild(destOption);
             });
         }
-
+         
         
         // Update the map when a location is selected from dropdowns
         function updateSelectedLocation(type, locationId) {
@@ -756,7 +756,8 @@ function generateSyntheticPOIs(routePoints, poiTypes) {
     }
     
     return pois;
-}// Fetch POIs along the route
+}
+     // Fetch POIs along the route
 function fetchPOIsAlongRoute(routePoints) {
     // Clear previous POIs
     document.getElementById('poiContainer').innerHTML = '<div class="poi-loading">Loading nearby points of interest...</div>';
@@ -771,12 +772,21 @@ function fetchPOIsAlongRoute(routePoints) {
     // Keep only source and destination markers
     markers = markers.filter(marker => marker === sourceMarker || marker === destinationMarker);
     
-    // Define POI types to search for
-    const poiTypesToSearch = activePOITypes.length > 0 ? activePOITypes : ['restaurant', 'cafe', 'hotel'];
+    // Define POI types to search for - limit to only the 5 specific types we want
+    const poiTypesToSearch = ['restaurant', 'cafe', 'hotel', 'hospital', 'school', 'atm'];
+    
+    // Get source and destination positions for proximity filtering later
+    const sourcePos = sourceMarker.getLatLng();
+    const destPos = destinationMarker.getLatLng();
     
     // Find min and max coordinates to define the search area
-    let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+    // Create a tighter bounding box by using route points plus source and destination
+    let minLat = Math.min(sourcePos.lat, destPos.lat);
+    let maxLat = Math.max(sourcePos.lat, destPos.lat);
+    let minLng = Math.min(sourcePos.lng, destPos.lng);
+    let maxLng = Math.max(sourcePos.lng, destPos.lng);
     
+    // Include route points in the bounding box
     routePoints.forEach(point => {
         minLat = Math.min(minLat, point[0]);
         maxLat = Math.max(maxLat, point[0]);
@@ -784,8 +794,8 @@ function fetchPOIsAlongRoute(routePoints) {
         maxLng = Math.max(maxLng, point[1]);
     });
     
-    // Add buffer (in degrees) - increase for sparse areas
-    const buffer = 0.02; // Roughly 2km
+    // Add a smaller buffer (in degrees) to keep POIs closer to route
+    const buffer = 0.001; // Roughly 100-200m - smaller than before
     minLat -= buffer;
     maxLat += buffer;
     minLng -= buffer;
@@ -796,11 +806,20 @@ function fetchPOIsAlongRoute(routePoints) {
     
     console.log("Overpass Query:", overpassQuery);
     
+    // Store route and endpoints for filtering
+    const routeData = {
+        route: routePoints,
+        sourcePos: sourcePos,
+        destPos: destPos
+    };
+    
     // Fetch data from Overpass API
     fetchOverpassData(overpassQuery)
         .then(pois => {
             console.log("Retrieved POIs:", pois);
-            displayPOIs(pois);
+            // Filter POIs by proximity to route before displaying
+            const filteredPois = filterPOIsByProximity(pois, routeData);
+            displayPOIs(filteredPois);
         })
         .catch(error => {
             console.error('Error fetching POIs:', error);
@@ -810,8 +829,108 @@ function fetchPOIsAlongRoute(routePoints) {
             // Fallback to synthetic POIs for demo purposes
             console.log("Falling back to synthetic POIs for demo");
             const syntheticPois = generateSyntheticPOIs(routePoints, poiTypesToSearch);
-            displayPOIs(syntheticPois);
+            const filteredSyntheticPois = filterPOIsByProximity(syntheticPois, routeData);
+            displayPOIs(filteredSyntheticPois);
         });
+}
+
+// Filter POIs by proximity to route or source/destination
+function filterPOIsByProximity(pois, routeData) {
+    // Maximum distance (in km) a POI can be from the route to be included
+    const MAX_DISTANCE_TO_ROUTE = 0.3; // 300 meters
+    
+    // Maximum distance (in km) a POI can be from source/destination
+    const MAX_DISTANCE_TO_ENDPOINT = 0.5; // 500 meters
+    
+    return pois.filter(poi => {
+        // First check if this is one of our desired POI types
+        const allowedTypes = ['restaurant', 'cafe', 'hotel', 'hospital', 'school', 'atm'];
+        if (!allowedTypes.includes(poi.type)) {
+            return false;
+        }
+        
+        // Check if POI is near source or destination
+        const sourceDistance = calculateDistance(
+            poi.lat, poi.lng, 
+            routeData.sourcePos.lat, routeData.sourcePos.lng
+        );
+        
+        const destDistance = calculateDistance(
+            poi.lat, poi.lng, 
+            routeData.destPos.lat, routeData.destPos.lng
+        );
+        
+        // If close to source or destination, include it
+        if (sourceDistance <= MAX_DISTANCE_TO_ENDPOINT || destDistance <= MAX_DISTANCE_TO_ENDPOINT) {
+            return true;
+        }
+        
+        // Otherwise, check distance to route
+        let minDistanceToRoute = Infinity;
+        
+        // For each segment of the route, calculate distance to the POI
+        for (let i = 0; i < routeData.route.length - 1; i++) {
+            const segmentStart = routeData.route[i];
+            const segmentEnd = routeData.route[i + 1];
+            
+            const distance = distanceToSegment(
+                poi.lat, poi.lng,
+                segmentStart[0], segmentStart[1],
+                segmentEnd[0], segmentEnd[1]
+            );
+            
+            minDistanceToRoute = Math.min(minDistanceToRoute, distance);
+        }
+        
+        return minDistanceToRoute <= MAX_DISTANCE_TO_ROUTE;
+    });
+}
+
+// Helper function to calculate distance between two points in km (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const d = R * c; // Distance in km
+    return d;
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI/180);
+}
+
+// Calculate distance from point to a line segment
+function distanceToSegment(pointLat, pointLng, lineLat1, lineLng1, lineLat2, lineLng2) {
+    // Convert to x,y coordinates for easier math
+    const x = pointLat;
+    const y = pointLng;
+    const x1 = lineLat1;
+    const y1 = lineLng1;
+    const x2 = lineLat2;
+    const y2 = lineLng2;
+    
+    // Calculate the squared length of the line segment
+    const lengthSquared = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+    
+    // If segment is just a point, return distance to that point
+    if (lengthSquared === 0) return calculateDistance(pointLat, pointLng, lineLat1, lineLng1);
+    
+    // Calculate projection scalar parameter t
+    const t = Math.max(0, Math.min(1, (
+        ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / lengthSquared
+    )));
+    
+    // Calculate nearest point on segment
+    const projX = x1 + t * (x2 - x1);
+    const projY = y1 + t * (y2 - y1);
+    
+    // Return distance from point to this projection point
+    return calculateDistance(pointLat, pointLng, projX, projY);
 }
 
 
@@ -824,6 +943,7 @@ function buildOverpassQuery(minLat, minLng, maxLat, maxLng, poiTypes) {
     let queryParts = [];
     
     // Convert our application POI types to Overpass tags
+    // Only include the specific types we want
     poiTypes.forEach(type => {
         switch(type) {
             case 'restaurant':
@@ -849,31 +969,8 @@ function buildOverpassQuery(minLat, minLng, maxLat, maxLng, poiTypes) {
                 queryParts.push('node["amenity"="school"](' + bbox + ');');
                 queryParts.push('way["amenity"="school"](' + bbox + ');');
                 break;
-            case 'shop':
-                queryParts.push('node["shop"](' + bbox + ');');
-                queryParts.push('way["shop"](' + bbox + ');');
-                break;
-            case 'place_of_worship':
-                queryParts.push('node["amenity"="place_of_worship"](' + bbox + ');');
-                queryParts.push('way["amenity"="place_of_worship"](' + bbox + ');');
-                break;
-            case 'fuel':
-                queryParts.push('node["amenity"="fuel"](' + bbox + ');');
-                queryParts.push('way["amenity"="fuel"](' + bbox + ');');
-                break;
-            default:
-                queryParts.push(`node["amenity"="${type}"](${bbox});`);
-                queryParts.push(`way["amenity"="${type}"](${bbox});`);
-                break;
         }
     });
-    
-    // Increase the search buffer for sparse areas
-    if (queryParts.length === 0) {
-        // Fallback - search for any amenities
-        queryParts.push(`node["amenity"](${bbox});`);
-        queryParts.push(`way["amenity"](${bbox});`);
-    }
     
     // Construct the complete Overpass query
     return `
@@ -959,8 +1056,8 @@ function processOverpassResponse(data) {
             // Skip elements without valid geometry
             if (!validGeometry) return;
             
-            // Determine POI type
-            let poiType = 'poi'; // Default type
+            // Determine POI type - only include our desired types
+            let poiType = null; // Default to null, will be filtered out
             
             if (element.tags.amenity === 'restaurant') {
                 poiType = 'restaurant';
@@ -974,16 +1071,10 @@ function processOverpassResponse(data) {
                 poiType = 'hospital';
             } else if (element.tags.amenity === 'school') {
                 poiType = 'school';
-            } else if (element.tags.shop) {
-                poiType = 'shop';
-            } else if (element.tags.amenity === 'place_of_worship') {
-                poiType = 'place_of_worship';
-            } else if (element.tags.amenity === 'fuel') {
-                poiType = 'fuel';
-            } else if (element.tags.amenity) {
-                // Include other amenities as well
-                poiType = element.tags.amenity;
             }
+            
+            // Skip if not one of our desired POI types
+            if (!poiType) return;
             
             // Get name (or generate a default if missing)
             const name = element.tags.name || 
@@ -1005,9 +1096,8 @@ function processOverpassResponse(data) {
                 address = city;
             }
             
-            // Get rating if available or generate a placeholder
-            // Note: OSM doesn't typically include ratings, so this is a placeholder
-            const rating = element.tags.stars || (3 + Math.floor(Math.random() * 2)) + '.' + Math.floor(Math.random() * 9);
+            // Add a default rating for display
+            const rating = element.tags.rating || ((Math.random() * 2) + 3).toFixed(1);
             
             // Create POI object
             pois.push({
@@ -1035,7 +1125,7 @@ function displayPOIs(pois) {
     
     // If no POIs found
     if (pois.length === 0) {
-        poiContainer.innerHTML = '<div class="poi-loading">No points of interest found in this area.</div>';
+        poiContainer.innerHTML = '<div class="poi-loading">No points of interest found near your route.</div>';
         return;
     }
     
@@ -1056,7 +1146,7 @@ function displayPOIs(pois) {
         poiItem.innerHTML = `
             <div class="poi-name">${poi.name}</div>
             <div class="poi-address">${poi.address}</div>
-            <div class="poi-rating">★ ${poi.rating}</div>
+            <div class="poi-rating">★ ${poi.rating || '4.0'}</div>
             <div class="poi-type">${poi.type.charAt(0).toUpperCase() + poi.type.slice(1)}</div>
             <button class="poi-directions-btn">Get Directions</button>
         `;
@@ -1114,7 +1204,7 @@ function displayPOIs(pois) {
         popupContent.innerHTML = `
             <h3>${poi.name}</h3>
             <p>${poi.address}</p>
-            <p>Rating: ★ ${poi.rating}</p>
+            <p>Rating: ★ ${poi.rating || '4.0'}</p>
             <p>Type: ${poi.type.charAt(0).toUpperCase() + poi.type.slice(1)}</p>
             <button class="set-as-destination">Set as Destination</button>
         `;
@@ -1149,7 +1239,6 @@ function displayPOIs(pois) {
     // Add POI list to container
     poiContainer.appendChild(poiList);
 }
-
         // Reset the map
         function resetMap() {
             // Clear route
