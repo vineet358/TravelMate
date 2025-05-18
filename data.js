@@ -1,15 +1,21 @@
 
 const haldwaniData = {
     nodes: [
-        { id: "n1", name: "Haldwani Railway Station", lat: 29.2238, lng: 79.5133 },
-        { id: "n2", name: "Sushila Tiwari Hospital", lat: 29.2134, lng: 79.5160 },
-        { id: "n3", name: "Nainital Bank Head Office", lat: 29.2207, lng: 79.5166 },
-        { id: "n4", name: "KMC Sports Ground", lat: 29.2134, lng: 79.5280 },
-        { id: "n5", name: "Nainital Road Bus Stand", lat: 29.2187, lng: 79.5057 },
-        { id: "n6", name: "Haldwani Degree College", lat: 29.2260, lng: 79.5295 },
+        { id: "n1", name: "Haldwani Railway Station", lat: 29.2152814703471, lng: 79.53398622568368
+        },
+        { id: "n2", name: "Sushila Tiwari Hospital", lat: 29.20439598826212, lng: 79.51602930489526
+        },
+        { id: "n3", name: "Nainital Bank Head Office",lat: 29.359525745345444, lng: 79.55900358468519
+        },
+        { id: "n4", name: "KMC Sports Ground", lat: 24.841079391574574, lng: 67.19733547791036
+        },
+        { id: "n5", name: "Nainital Road Bus Stand", lat: 29.38031905605701, lng: 79.46353229963547
+        },
+        { id: "n6", name: "Haldwani Degree College", lat:29.22603,lng: 79.52953 },
         { id: "n7", name: "Gaulapar Bus Stand", lat: 29.2296, lng: 79.5058 },
         { id: "n8", name: "Chitrashila Auditorium", lat: 29.2173, lng: 79.5123 },
-        { id: "n9", name: "Nainital Road Market", lat: 29.2198, lng: 79.5082 },
+        { id: "n9", name: "Krishna Super Mart", lat: 29.194773695270282, lng: 79.52392336209574
+        },
         { id: "n10", name: "Bhotia Parao Market", lat: 29.2173, lng: 79.5228 },
         { id: "n11", name: "Govt. Medical College", lat: 29.2041, lng: 79.5120 },
         { id: "n12", name: "ISBT Haldwani", lat: 29.2126, lng: 79.4998 },
