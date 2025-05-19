@@ -257,29 +257,6 @@ button:focus {
     text-align: center;
 }
 
-/* Filter styling */
-.filter-item {
-    margin-bottom: 10px;
-}
-
-.filter-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-.filter-actions button {
-    flex: 1;
-    font-size: 13px;
-}
-
-#clearFiltersBtn {
-    background-color: var(--neutral-color);
-}
-
-#clearFiltersBtn:hover {
-    background-color: var(--neutral-hover);
-}
 
 /* Loading states */
 .poi-loading {
@@ -481,4 +458,7 @@ button:focus {
         font-size: 0.9em;
         color: #666;
     }
+
+
+    
 }

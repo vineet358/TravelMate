@@ -14,6 +14,7 @@
         let activePOITypes = []; // For tracking active POI filters
         let currentRouteMode = "driving"; // Default route mode
         let useApiRouting=true;
+        let routingAlgorithm = 'api'; // Default to API routing
         
         // Marker icons
         const markerIcons = {
@@ -119,74 +120,101 @@
             })
         };
 
-        // Initialize the map and core services when the window loads
-        window.onload = function() {
-            initMap();
-            createGraph();
-            populateLocationDropdowns();
-            
-            // Set up event listeners
-            document.getElementById('findPathBtn').addEventListener('click', handleFindPathClick);
-            document.getElementById('resetBtn').addEventListener('click', resetMap);
-            document.getElementById('showAllLocationsBtn').addEventListener('click', showAllLocations);
-            
-            // Algorithm selection buttons
+      // Update the event listeners for the routing algorithm buttons
+window.onload = function() {
+    initMap();
+    createGraph();
+    populateLocationDropdowns();
+    
+    // Set up event listeners
+    document.getElementById('findPathBtn').addEventListener('click', handleFindPathClick);
+    document.getElementById('resetBtn').addEventListener('click', resetMap);
+    document.getElementById('showAllLocationsBtn').addEventListener('click', showAllLocations);
+    
+    // Fix the routing algorithm button event listeners
     document.getElementById('apiRouteBtn').addEventListener('click', function() {
-        setRoutingAlgorithm(true);
+        setRoutingAlgorithm('api');
     });
+    
     document.getElementById('dijkstraRouteBtn').addEventListener('click', function() {
-        setRoutingAlgorithm(false);
+        setRoutingAlgorithm('dijkstra');
     });
     
-            // Location selectors change handlers
-            document.getElementById('sourceLocation').addEventListener('change', function() {
-                updateSelectedLocation('source', this.value);
-            });
-            
-            document.getElementById('destinationLocation').addEventListener('change', function() {
-                updateSelectedLocation('destination', this.value);
-            });
-            
-            // Setup route mode selector
-            const routeModeOptions = document.querySelectorAll('.route-mode-option');
-            routeModeOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    // Remove active class from all options
-                    routeModeOptions.forEach(opt => opt.classList.remove('active'));
-                    
-                    // Add active class to clicked option
-                    this.classList.add('active');
-                    
-                    // Update current route mode
-                    currentRouteMode = this.dataset.mode;
-                    
-                    // Recalculate route if both source and destination are set
-                    if (sourceMarker && destinationMarker) {
-                        handleFindPathClick();
-                    }
-                });
-            });
+    // Fix the A* button ID (make sure the HTML is updated too)
+    document.getElementById('astarRouteBtn').addEventListener('click', function() {
+        setRoutingAlgorithm('astar');
+    });
 
-            
-            
-            // Setup POI category filters
-            setupPOIFilters();
-        };
-
-        // Function to set the routing algorithm
-function setRoutingAlgorithm(useApi) {
-    useApiRouting = useApi;
+    // Location selectors change handlers
+    document.getElementById('sourceLocation').addEventListener('change', function() {
+        updateSelectedLocation('source', this.value);
+    });
     
-    // Update UI to show active button
-    document.getElementById('apiRouteBtn').classList.toggle('active', useApi);
-    document.getElementById('dijkstraRouteBtn').classList.toggle('active', !useApi);
+    document.getElementById('destinationLocation').addEventListener('change', function() {
+        updateSelectedLocation('destination', this.value);
+    });
+    
+    // Setup route mode selector
+    const routeModeOptions = document.querySelectorAll('.route-mode-option');
+    routeModeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove active class from all options
+            routeModeOptions.forEach(opt => opt.classList.remove('active'));
+            
+            // Add active class to clicked option
+            this.classList.add('active');
+            
+            // Update current route mode
+            currentRouteMode = this.dataset.mode;
+            
+            // Recalculate route if both source and destination are set
+            if (sourceMarker && destinationMarker) {
+                handleFindPathClick();
+            }
+        });
+    });
+    
+    // Setup POI category filters
+    setupPOIFilters();
+    
+    // Set the default routing algorithm
+    setRoutingAlgorithm('api'); // Set default algorithm on load
+};
+
+// Enhanced setRoutingAlgorithm function to fix toggling issues
+function setRoutingAlgorithm(algorithm) {
+    console.log('Setting routing algorithm to:', algorithm);
+    
+    // Update the global variable
+    routingAlgorithm = algorithm;
+    
+    // Update UI to show active button - fix the A* button ID
+    document.getElementById('apiRouteBtn').classList.remove('active');
+    document.getElementById('dijkstraRouteBtn').classList.remove('active');
+    document.getElementById('astarRouteBtn').classList.remove('active');
+    
+    // Add active class only to the selected algorithm button
+    if (algorithm === 'api') {
+        document.getElementById('apiRouteBtn').classList.add('active');
+    } else if (algorithm === 'dijkstra') {
+        document.getElementById('dijkstraRouteBtn').classList.add('active');
+    } else if (algorithm === 'astar') {
+        document.getElementById('astarRouteBtn').classList.add('active');
+    }
+    
+    // Clear existing route display
+    if (routeLayer) {
+        routeLayer.clearLayers();
+    }
     
     // Recalculate route if both source and destination are set
     if (sourceMarker && destinationMarker) {
+        console.log('Recalculating route with algorithm:', algorithm);
         handleFindPathClick();
     }
 }
-// Update the handleFindPathClick function
+
+// Enhanced handleFindPathClick function with better debugging
 function handleFindPathClick() {
     // Make sure we have both source and destination
     if (!sourceMarker || !destinationMarker) {
@@ -201,14 +229,32 @@ function handleFindPathClick() {
     const sourcePos = sourceMarker.getLatLng();
     const destPos = destinationMarker.getLatLng();
     
+    console.log('Calculating route using algorithm:', routingAlgorithm);
+    console.log('From:', sourcePos, 'To:', destPos);
+    
+    // Clear previous route
+    routeLayer.clearLayers();
+    
     // Use appropriate routing method based on user selection
-    if (useApiRouting) {
-        calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
-    } else {
-        calculateRouteWithDijkstra(sourcePos, destPos);
+    switch (routingAlgorithm) {
+        case 'api':
+            console.log('Using API routing with mode:', currentRouteMode);
+            calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
+            break;
+        case 'dijkstra':
+            console.log('Using Dijkstra algorithm');
+            calculateRouteWithDijkstra(sourcePos, destPos);
+            break;
+        case 'astar':
+            console.log('Using A* algorithm');
+            calculateRouteWithAStar(sourcePos, destPos);
+            break;
+        default:
+            // Default to API routing
+            console.log('Using default API routing');
+            calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
     }
 }
-
         // Initialize the Leaflet Map centered on Haldwani
         function initMap() {
             // Create map instance
@@ -612,8 +658,14 @@ function placeMarker(position, type) {
         .catch(error => {
             console.error('Error fetching route:', error);
             alert(`Failed to get route: ${error.message}. Falling back to local calculation.`);
-            calculateRouteWithDijkstra(sourcePos, destPos);
-        })
+            
+                // Determine which algorithm to use as fallback
+                if (routingAlgorithm === 'astar') {
+                    calculateRouteWithAStar(sourcePos, destPos);
+                } else {
+                    calculateRouteWithDijkstra(sourcePos, destPos);
+                }
+            })
         .finally(() => {
             // Hide loading indicator if any
             const loader = document.getElementById('loadingIndicator');
