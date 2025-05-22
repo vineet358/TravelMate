@@ -1,4 +1,4 @@
-// Function to calculate route using Dijkstra's algorithm
+// Calculation of dijkstra algo
 function calculateRouteWithDijkstra(sourcePos, destPos) {
     const sourceNode = findNearestNode(sourcePos);
     const destNode = findNearestNode(destPos);
@@ -26,11 +26,11 @@ function calculateRouteWithDijkstra(sourcePos, destPos) {
         return [node.lat, node.lng];
     });
     
-    // Calculate estimated duration based on transportation mode
+    //cal ulate route distance in km
     let speedFactor;
     switch (currentRouteMode) {
         case 'walking':
-            speedFactor = 5; // km/h for walking
+            speedFactor = 5;
             break;
         case 'cycling':
             speedFactor = 15; // km/h for cycling
@@ -44,18 +44,18 @@ function calculateRouteWithDijkstra(sourcePos, destPos) {
     // Convert to minutes: (distance in km / speed in km/h) * 60 min/h
     const duration = (distance / speedFactor) * 60;
     
-    // Display the route
+//it is for displaying the specifid route
     displayRoute({
         distance: distance,
         duration: duration,
         points: routePoints
     });
     
-    // Hide loading indicator
+   
     document.getElementById('loadingIndicator').style.display = 'none';
 }
 
-// Dijkstra's algorithm for finding shortest path
+// Dijkstra's algo ,for finding shortes path 
 function dijkstraShortestPath(startNodeId, endNodeId) {
     // Initialize data structures
     const distances = {};
@@ -69,12 +69,12 @@ function dijkstraShortestPath(startNodeId, endNodeId) {
         unvisited.add(nodeId);
     });
     
-    // Distance from start node to itself is 0
+   
     distances[startNodeId] = 0;
     
-    // Main algorithm loop
+    
     while (unvisited.size > 0) {
-        // Find the unvisited node with the smallest distance
+        // Find the unvisitd  node with the smallest distance
         let currentNodeId = null;
         let smallestDistance = Infinity;
         
@@ -85,7 +85,7 @@ function dijkstraShortestPath(startNodeId, endNodeId) {
             }
         }
         
-        // If smallest distance is Infinity, there's no path to destination
+        // If  we find that the smallest distance is Infinity, there's no path to destination,simply break
         if (smallestDistance === Infinity) {
             break;
         }

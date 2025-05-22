@@ -962,7 +962,7 @@ function filterPOIsByProximity(pois, routeData) {
     const MAX_DISTANCE_TO_ROUTE = 0.08; 
     
     // Maximum distance (in km) a POI can be from source/destination
-    const MAX_DISTANCE_TO_ENDPOINT = 0.08; 
+    const MAX_DISTANCE_TO_ENDPOINT = 0.04; 
     
     return pois.filter(poi => {
         // First check if this is one of our desired POI types

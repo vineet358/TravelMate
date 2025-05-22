@@ -1,6 +1,6 @@
-// Calculate route using A* algorithm
+
 function calculateRouteWithAStar(sourcePos, destPos) {
-    // Find nearest nodes to the selected points
+    
     const startNode = findNearestNode({ lat: sourcePos.lat, lng: sourcePos.lng });
     const endNode = findNearestNode({ lat: destPos.lat, lng: destPos.lng });
     
@@ -13,7 +13,7 @@ function calculateRouteWithAStar(sourcePos, destPos) {
         return;
     }
     
-    // Core A* algorithm
+ 
     const path = aStar(haldwaniData.nodes, haldwaniData.edges, startNode.id, endNode.id);
     
     if (!path || path.length === 0) {
@@ -71,7 +71,7 @@ function calculateRouteWithAStar(sourcePos, destPos) {
     document.getElementById('loadingIndicator').style.display = 'none';
 }
 
-// A* algorithm with consistent distance calculation
+
 function aStar(nodes, edges, startId, goalId) {
     const nodeMap = Object.fromEntries(nodes.map(node => [node.id, node]));
   
@@ -88,9 +88,7 @@ function aStar(nodes, edges, startId, goalId) {
   
     gScore[startId] = 0;
     
-    // Make sure to use the same distance calculation method as in your edges data
-    // If your edge distances are pre-calculated Haversine distances in km, use that
-    // Otherwise, if they're in a different unit or calculation method, adjust the heuristic accordingly
+    
     fScore[startId] = getHeuristicDistance(nodeMap[startId], nodeMap[goalId]);
   
     while (openSet.size > 0) {
@@ -106,7 +104,7 @@ function aStar(nodes, edges, startId, goalId) {
           current = cameFrom[current];
           path.unshift(current);
         }
-        return path; // Return path as array of node IDs
+        return path; 
       }
   
       openSet.delete(current);
@@ -138,18 +136,16 @@ function aStar(nodes, edges, startId, goalId) {
     return null; // No path found
 }
 
-// This function should match the distance calculation used in your edge data
-// Replace this with the appropriate calculation if your edge distances use a different method
+
 function getHeuristicDistance(node1, node2) {
-    // If your edge distances are in km based on Haversine formula
+    
     return getDistance(
         { lat: node1.lat, lng: node1.lng },
         { lat: node2.lat, lng: node2.lng }
     );
 }
 
-// This is your existing Haversine distance function
-// Make sure this matches the distance calculation used for your edges
+s
 function getDistance(point1, point2) {
     const R = 6371; // Earth's radius in km
     const dLat = (point2.lat - point1.lat) * Math.PI / 180;
