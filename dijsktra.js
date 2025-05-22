@@ -41,7 +41,7 @@ function calculateRouteWithDijkstra(sourcePos, destPos) {
             break;
     }
     
-    // Convert to minutes: (distance in km / speed in km/h) * 60 min/h
+    //cALCULATE distance in km
     const duration = (distance / speedFactor) * 60;
     
 //it is for displaying the specifid route
@@ -57,7 +57,7 @@ function calculateRouteWithDijkstra(sourcePos, destPos) {
 
 // Dijkstra's algo ,for finding shortes path 
 function dijkstraShortestPath(startNodeId, endNodeId) {
-    // Initialize data structures
+   
     const distances = {};
     const previous = {};
     const unvisited = new Set();
@@ -95,16 +95,16 @@ function dijkstraShortestPath(startNodeId, endNodeId) {
             break;
         }
         
-        // Remove current node from unvisited set
+        
         unvisited.delete(currentNodeId);
         
         // Check all neighbors of current node
         const currentNode = graph[currentNodeId];
         
         for (const neighbor of currentNode.neighbors) {
-            // Only consider unvisited neighbors
+            //CHECK IF NEIGHBOUR IS UNVISITED 
             if (unvisited.has(neighbor.id)) {
-                // Calculate tentative distance
+                
                 const tentativeDistance = distances[currentNodeId] + neighbor.distance;
                 
                 // Update if this path is shorter
@@ -116,11 +116,11 @@ function dijkstraShortestPath(startNodeId, endNodeId) {
         }
     }
     
-    // Reconstruct the path
+    // ReconstructING  the path
     const path = [];
     let current = endNodeId;
     
-    // If end node wasn't reached, return empty path
+    
     if (previous[endNodeId] === null && endNodeId !== startNodeId) {
         return { distance: Infinity, path: [] };
     }
