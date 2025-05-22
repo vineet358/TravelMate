@@ -4,7 +4,7 @@ const host = 'localhost';
 const port = 8080;
 
 corsAnywhere.createServer({
-    originWhitelist: [], // Allow all origins
+    originWhitelist: [], //it alllows all origin 
     requireHeader: ['origin', 'x-requested-with'],
     removeHeaders: ['cookie', 'cookie2']
 }).listen(port, host, () => {

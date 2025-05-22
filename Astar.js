@@ -42,11 +42,11 @@ function calculateRouteWithAStar(sourcePos, destPos) {
         }
     }
     
-    // Calculate duration based on the mode of transport
+   // calculat route dist based on speed (km/h)
     let speed;
     switch (currentRouteMode) {
         case 'driving':
-            speed = 30; // km/h
+            speed = 30; 
             break;
         case 'cycling':
             speed = 15; // km/h
@@ -60,14 +60,14 @@ function calculateRouteWithAStar(sourcePos, destPos) {
     
     const duration = (totalDistance / speed) * 60; // minutes
     
-    // Display route
+    
     displayRoute({
         points: routePoints,
         distance: totalDistance,
         duration: duration
     });
     
-    // Hide loading indicator
+  
     document.getElementById('loadingIndicator').style.display = 'none';
 }
 
@@ -92,7 +92,7 @@ function aStar(nodes, edges, startId, goalId) {
     fScore[startId] = getHeuristicDistance(nodeMap[startId], nodeMap[goalId]);
   
     while (openSet.size > 0) {
-      // Get node in openSet with lowest fScore
+      
       let current = [...openSet].reduce((a, b) =>
         fScore[a] < fScore[b] ? a : b
       );
@@ -133,7 +133,7 @@ function aStar(nodes, edges, startId, goalId) {
       }
     }
   
-    return null; // No path found
+    return null; //return null if no path found
 }
 
 
@@ -147,7 +147,7 @@ function getHeuristicDistance(node1, node2) {
 
 s
 function getDistance(point1, point2) {
-    const R = 6371; // Earth's radius in km
+    const R = 6371; // Radius of earth in kilometre
     const dLat = (point2.lat - point1.lat) * Math.PI / 180;
     const dLon = (point2.lng - point1.lng) * Math.PI / 180;
     
