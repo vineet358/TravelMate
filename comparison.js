@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize maps
+  
     const dijkstraMap = L.map('dijkstraMap').setView([51.505, -0.09], 13);
     const astarMap = L.map('astarMap').setView([51.505, -0.09], 13);
     
-    // Add tile layers
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(dijkstraMap);
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(astarMap);
     
-    // Get data from localStorage
+   
     let sourceLocation = localStorage.getItem('travelMateSourceLocation');
     let destLocation = localStorage.getItem('travelMateDestLocation');
     let transportMode = localStorage.getItem('travelMateTransportMode') || 'driving';
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Destination:', destLocation);
     console.log('Transport:', transportMode);
     
-    // Parse locations
+   
     let source = null;
     let destination = null;
     
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Check if source and destination are specified
+    //check whether destination and source are specified or not 
     if (!source || !destination) {
         document.querySelector('.comparison-container').innerHTML = 
             '<div class="error-message">No source or destination specified. Please select locations on the main map first.</div>';
