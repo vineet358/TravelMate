@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haldwani Pathfinder - Enhanced</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet " href="index.css">
+</head>
+<body>
+    <div id="sidebar">
+        <h1>TravelMate</h1>
+        
+        <div class="form-group">
+            <label for="sourceLocation">Source Location:</label>
+            <select id="sourceLocation">
+                <option value="">Select Source Location</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+
+        
+        
+        <div class="form-group">
+            <label for="destinationLocation">Destination Location:</label>
+            <select id="destinationLocation">
+                <option value="">Select Destination Location</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+
+
+        <div class="routing-algorithm-container">
+            <h3>Routing Algorithm</h3>
+            <div class="routing-algorithm-options">
+                <button id="apiRouteBtn" class="algorithm-btn active">Use API Routing</button>
+                <button id="dijkstraRouteBtn" class="algorithm-btn">Use Dijkstra Algorithm</button>
+                <button id="astarRouteBtn" class="algorithm-btn">Use A* Algorithm</button>
+            </div>
+        </div>
+        
+        <div class="route-mode-selector">
+            <div class="route-mode-option active" data-mode="driving">Driving</div>
+            <div class="route-mode-option" data-mode="walking">Walking</div>
+            <div class="route-mode-option" data-mode="cycling">Cycling</div>
+        </div>
+
+        <button id="compareAlgorithmsBtn" class="btn btn-primary">
+            <i class="fas fa-balance-scale"></i> Compare Algorithms
+        </button>
+        
+        <div class="form-group">
+            <button id="findPathBtn">Find Path</button>
+            <button id="resetBtn">Reset</button>
+            <button id="showAllLocationsBtn">Show All Locations</button>
+        </div>
+        
+        <div id="routeInfo">
+            <!-- Route information will be displayed here -->
+        </div>
+        
+        <div id="poiFilters">
+            <!-- POI filters will be populated dynamically -->
+        </div>
+        
+        <div id="poiContainer">
+            <!-- POIs will be displayed here -->
+        </div>
+        
+        <div class="attribution">
+            © OpenStreetMap contributors | Routing: OpenRouteService | POI data: Overpass API
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="loading-indicator" id="loadingIndicator">
+        <div class="loading-spinner"></div>
+        <div>Processing your request...</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="index.js"></script>
+    <script src="data.js"></script>
+    <script src="dijsktra.js"></script>
+    <script src="Astar.js"></script>
+   
+<script>
+    document.getElementById("compareAlgorithmsBtn").addEventListener("click", () => {
+    const source = document.getElementById("sourceLocation").value;
+    const destination = document.getElementById("destinationLocation").value;
+
+    if (!source || !destination) {
+        alert("Please select both source and destination");
+        return;
+    }
+
+    window.location.href = `compare.html?source=${encodeURIComponent(source)}&destination=${encodeURIComponent(destination)}`;
+});
+
+</script>
+
+</body>
+</html>
+
