@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentNodeIndex = 0;
     let pathNodeIndex = 0;
     
-    // Animation elements
+    //Elements for Animation 
     let dijkstraVisitedCircles = [];
     let astarVisitedCircles = [];
     let dijkstraPathLine = null;
