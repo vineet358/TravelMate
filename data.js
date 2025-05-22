@@ -2,8 +2,8 @@ const haldwaniData = {
     nodes: [
         { id: "n1", name: "Haldwani Railway Station", lat: 29.2152814703471, lng: 79.53398622568368 },
         { id: "n2", name: "Sushila Tiwari Hospital", lat: 29.20439598826212, lng: 79.51602930489526 },
-        { id: "n3", name: "Nainital Bank Head Office", lat: 29.2173, lng: 79.5223 }, // Corrected coordinates
-        { id: "n4", name: "KMC Sports Ground", lat: 29.2167, lng: 79.5112 }, // Corrected coordinates
+        { id: "n3", name: "Nainital Bank Head Office", lat: 29.2173, lng: 79.5223 }, 
+        { id: "n4", name: "KMC Sports Ground", lat: 29.2167, lng: 79.5112 }, 
         { id: "n5", name: "Nainital Road Bus Stand", lat: 29.2234, lng: 79.5027 }, // Corrected coordinates
         { id: "n6", name: "Haldwani Degree College", lat: 29.22603, lng: 79.52953 },
         { id: "n7", name: "Gaulapar Bus Stand", lat: 29.2296, lng: 79.5058 },
@@ -62,7 +62,7 @@ const haldwaniData = {
         { id: "n60", name: "Kaladhungi Road", lat: 29.2205, lng: 79.5044 } // Corrected coordinates
     ],
     
-    // Improved edges based on geographical proximities
+    //edges 
     edges: [
         // Railway Station Connections
         { source: "n1", target: "n12", distance: 0.4 }, // Railway Station to ISBT
@@ -177,7 +177,6 @@ const haldwaniData = {
         { source: "n37", target: "n54", distance: 0.3 }, // Kusumkhera to Ambedkar Stadium
         { source: "n37", target: "n60", distance: 0.5 }, // Kusumkhera to Kaladhungi Road
         
-        // Southern Areas
         { source: "n9", target: "n23", distance: 0.5 }, // Krishna Super Mart to Rampur Road Junction
         { source: "n9", target: "n27", distance: 0.5 }, // Krishna Super Mart to Lalkuan Chowk
         { source: "n9", target: "n38", distance: 0.3 }, // Krishna Super Mart to Transport Nagar
