@@ -46,7 +46,7 @@ body {
     z-index: 10;
 }
 
-/* Map styling - 70% */
+/* Styling of Map*/
 #map {
     flex: 1;
     height: 100%;
