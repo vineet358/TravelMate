@@ -97,7 +97,7 @@ const haldwaniData = {
         { source: "n29", target: "n42", distance: 0.4 }, // Delhi Sweets to Gandhi Nagar
         { source: "n29", target: "n46", distance: 0.5 }, // Delhi Sweets to Malla Gorakhpur
         
-        // Bus Stands Connections
+       //conneections of bus stand 
         { source: "n5", target: "n7", distance: 0.3 }, // Nainital Road Bus Stand to Gaulapar Bus Stand
         { source: "n5", target: "n47", distance: 0.1 }, // Nainital Road Bus Stand to Tallital Bus Station
         { source: "n5", target: "n52", distance: 0.3 }, // Nainital Road Bus Stand to Shiva Talkies
