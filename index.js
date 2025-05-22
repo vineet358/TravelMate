@@ -120,8 +120,10 @@
             })
         };
 
-      // Update the event listeners for the routing algorithm buttons
+ // Update your window.onload function to include setupComparisonNavigation
 window.onload = function() {
+    console.log('Window loaded, initializing...');
+    
     initMap();
     createGraph();
     populateLocationDropdowns();
@@ -179,7 +181,35 @@ window.onload = function() {
     
     // Set the default routing algorithm
     setRoutingAlgorithm('api'); // Set default algorithm on load
+    
+    // *** IMPORTANT: Setup comparison navigation here ***
+    setupComparisonNavigation();
+    
+    console.log('Initialization complete');
 };
+
+// Add a backup function to automatically store data when markers are updated
+function storeLocationData() {
+    if (sourceMarker && destinationMarker) {
+        try {
+            const sourceLat = sourceMarker.getLatLng().lat;
+            const sourceLng = sourceMarker.getLatLng().lng;
+            const destLat = destinationMarker.getLatLng().lat;
+            const destLng = destinationMarker.getLatLng().lng;
+            
+            localStorage.setItem('travelMateSourceLocation', 
+                JSON.stringify({lat: sourceLat, lng: sourceLng}));
+            localStorage.setItem('travelMateDestLocation', 
+                JSON.stringify({lat: destLat, lng: destLng}));
+            localStorage.setItem('travelMateTransportMode', currentRouteMode || 'driving');
+            
+            console.log('Location data automatically stored');
+        } catch (error) {
+            console.error('Error auto-storing location data:', error);
+        }
+    }
+}
+
 
 // Enhanced setRoutingAlgorithm function to fix toggling issues
 function setRoutingAlgorithm(algorithm) {
@@ -349,7 +379,6 @@ function displaySelectedLocationInfo(type, locationId) {
     }
 }
 
-// Modify the updateSelectedLocation function to display location info
 function updateSelectedLocation(type, locationId) {
     if (!locationId) return;
     
@@ -370,6 +399,9 @@ function updateSelectedLocation(type, locationId) {
         
         // Display location information below dropdown
         displaySelectedLocationInfo(type, locationId);
+        
+        // *** ADD THIS: Store location data automatically ***
+        storeLocationData();
         
         // If both source and destination are selected, calculate route
         if (sourceMarker && destinationMarker) {
@@ -489,6 +521,7 @@ function placeMarker(position, type) {
                 <button class="snap-to-location" data-id="${nearestNode.id}" data-type="destination">Snap to ${nearestNode.name}</button>
             `;
         }
+        setTimeout(storeLocationData, 100);
     }
     
     // Bind the popup to the marker
@@ -1356,66 +1389,142 @@ function displayPOIs(pois) {
             map.setView(HALDWANI_CENTER, HALDWANI_ZOOM);
         }
 
-        // Show all locations
-        function showAllLocations() {
-            // Clear previous markers (except source and destination)
-            markers.forEach(marker => {
-                if (marker !== sourceMarker && marker !== destinationMarker) {
-                    map.removeLayer(marker);
-                }
-            });
+        // Fix the setupComparisonNavigation function with correct variable names
+function setupComparisonNavigation() {
+    const compareBtn = document.getElementById('compareBtn');
+    console.log('Setting up comparison navigation, button found:', !!compareBtn);
+    
+    if (compareBtn) {
+        // Remove any existing event listeners by cloning the button
+        const newCompareBtn = compareBtn.cloneNode(true);
+        compareBtn.parentNode.replaceChild(newCompareBtn, compareBtn);
+        
+        newCompareBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Compare button clicked!');
+            console.log('sourceMarker:', !!sourceMarker);
+            console.log('destinationMarker:', !!destinationMarker);
             
-            // Keep only source and destination markers
-            markers = markers.filter(marker => marker === sourceMarker || marker === destinationMarker);
-            
-            // Add markers for all nodes
-            haldwaniData.nodes.forEach(node => {
-                // Create marker
-                const marker = L.marker([node.lat, node.lng], {
-                    icon: markerIcons.poi
-                }).addTo(map);
-                
-                // Create popup
-                const popupContent = document.createElement('div');
-                popupContent.className = 'location-info-window';
-                popupContent.innerHTML = `
-                    <h3>${node.name}</h3>
-                    <p>Latitude: ${node.lat.toFixed(6)}</p>
-                    <p>Longitude: ${node.lng.toFixed(6)}</p>
-                    <button class="set-as-source">Set as Source</button>
-                    <button class="set-as-destination">Set as Destination</button>
-                `;
-                
-                // Bind popup to marker
-                marker.bindPopup(popupContent);
-                
-                // Add event listener for popup open
-                marker.on('popupopen', function() {
-                    // Add click handler for 'Set as Source' button
-                    document.querySelector('.set-as-source').addEventListener('click', function() {
-                        document.getElementById('sourceLocation').value = node.id;
-                        updateSelectedLocation('source', node.id);
-                        marker.closePopup();
-                    });
+            // Check if we have both source and destination
+            if (sourceMarker && destinationMarker) {
+                try {
+                    // Get coordinates
+                    const sourceLat = sourceMarker.getLatLng().lat;
+                    const sourceLng = sourceMarker.getLatLng().lng;
+                    const destLat = destinationMarker.getLatLng().lat;
+                    const destLng = destinationMarker.getLatLng().lng;
                     
-                    // Add click handler for 'Set as Destination' button
-                    document.querySelector('.set-as-destination').addEventListener('click', function() {
-                        document.getElementById('destinationLocation').value = node.id;
-                        updateSelectedLocation('destination', node.id);
-                        marker.closePopup();
-                    });
-                });
-                
-                // Add to markers array
-                markers.push(marker);
-            });
-            
-            // Create bounds to fit all markers
-            const bounds = L.latLngBounds(haldwaniData.nodes.map(node => [node.lat, node.lng]));
-            
-            // Fit map to bounds
-            map.fitBounds(bounds, {
-                padding: [50, 50]
-            });
+                    // Use currentRouteMode (not currentTransportMode) as that's what your code uses
+                    const transportMode = currentRouteMode || 'driving';
+                    
+                    // Store in localStorage for comparison page to access
+                    const sourceData = JSON.stringify({lat: sourceLat, lng: sourceLng});
+                    const destData = JSON.stringify({lat: destLat, lng: destLng});
+                    
+                    localStorage.setItem('travelMateSourceLocation', sourceData);
+                    localStorage.setItem('travelMateDestLocation', destData);
+                    localStorage.setItem('travelMateTransportMode', transportMode);
+                    
+                    // Debug: Log what we're storing
+                    console.log('Storing source:', sourceData);
+                    console.log('Storing destination:', destData);
+                    console.log('Storing transport mode:', transportMode);
+                    
+                    // Verify storage immediately
+                    console.log('Verification:');
+                    console.log('Source stored:', localStorage.getItem('travelMateSourceLocation'));
+                    console.log('Dest stored:', localStorage.getItem('travelMateDestLocation'));
+                    console.log('Mode stored:', localStorage.getItem('travelMateTransportMode'));
+                    
+                    // Navigate to compare page
+                    console.log('Navigating to compare.html...');
+                    window.location.href = 'compare.html';
+                    
+                } catch (error) {
+                    console.error('Error storing data:', error);
+                    alert('Error preparing comparison data: ' + error.message);
+                }
+            } else {
+                console.log('Missing markers - showing alert');
+                alert('Please select both source and destination locations first.');
+            }
+        });
+        
+        console.log('Compare button event listener attached successfully');
+    } else {
+        console.error('Compare button not found in DOM!');
+    }
+}
+// Your showAllLocations function (REMOVE the setupComparisonNavigation from inside this function)
+function showAllLocations() {
+    // Clear previous markers (except source and destination)
+    markers.forEach(marker => {
+        if (marker !== sourceMarker && marker !== destinationMarker) {
+            map.removeLayer(marker);
         }
+    });
+    
+    // Keep only source and destination markers
+    markers = markers.filter(marker => marker === sourceMarker || marker === destinationMarker);
+    
+    // Add markers for all nodes
+    haldwaniData.nodes.forEach(node => {
+        // Create marker
+        const marker = L.marker([node.lat, node.lng], {
+            icon: markerIcons.poi
+        }).addTo(map);
+        
+        // Create popup
+        const popupContent = document.createElement('div');
+        popupContent.className = 'location-info-window';
+        popupContent.innerHTML = `
+            <h3>${node.name}</h3>
+            <p>Latitude: ${node.lat.toFixed(6)}</p>
+            <p>Longitude: ${node.lng.toFixed(6)}</p>
+            <button class="set-as-source">Set as Source</button>
+            <button class="set-as-destination">Set as Destination</button>
+        `;
+        
+        // Bind popup to marker
+        marker.bindPopup(popupContent);
+        
+        // Add event listener for popup open
+        marker.on('popupopen', function() {
+            // Add click handler for 'Set as Source' button
+            document.querySelector('.set-as-source').addEventListener('click', function() {
+                document.getElementById('sourceLocation').value = node.id;
+                updateSelectedLocation('source', node.id);
+                marker.closePopup();
+            });
+            
+            // Add click handler for 'Set as Destination' button
+            document.querySelector('.set-as-destination').addEventListener('click', function() {
+                document.getElementById('destinationLocation').value = node.id;
+                updateSelectedLocation('destination', node.id);
+                marker.closePopup();
+            });
+        });
+        
+        // Add to markers array
+        markers.push(marker);
+    });
+    
+    // Create bounds to fit all markers
+    const bounds = L.latLngBounds(haldwaniData.nodes.map(node => [node.lat, node.lng]));
+    
+    // Fit map to bounds
+    map.fitBounds(bounds, {
+        padding: [50, 50]
+    });
+}
+
+// Call setupComparisonNavigation() in your main initialization code
+// This should be called once when the page loads, typically in your DOMContentLoaded event or similar
+document.addEventListener('DOMContentLoaded', function() {
+    // ... your other initialization code ...
+    
+    // Initialize comparison navigation
+    setupComparisonNavigation();
+    
    
+});
