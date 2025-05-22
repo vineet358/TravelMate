@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('users', JSON.stringify([]));
     }
     
-    // Toggle between login and registration forms
+   // for toggling between registration and login forms 
     registerBtn.addEventListener('click', () => {
         container.classList.add('active');
     });
