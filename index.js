@@ -1175,11 +1175,11 @@ function showAllLocations() {
     }, 10000);
 }
 
-// Global function for popup buttons
+
 window.selectLocationFromPopup = function(locationId, type) {
     updateSelectedLocation(type, locationId);
     
-    // Close all popups
+  
     map.eachLayer(layer => {
         if (layer.getPopup && layer.getPopup()) {
             layer.closePopup();
@@ -1187,7 +1187,7 @@ window.selectLocationFromPopup = function(locationId, type) {
     });
 };
 
-// Add CSS animations for notifications
+
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideInRight {
