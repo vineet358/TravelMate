@@ -1,11 +1,6 @@
-// POI Enhancement for existing pathfinder application
-// Add this code to your existing index.js file or create a separate poi.js file
 
-// POI related variables
 let poiMarkers = [];
 let poisVisible = false;
-
-// POI types configuration
 const poiTypes = {
     restaurant: {
         query: `[out:json][timeout:25];(node["amenity"="restaurant"]({{bbox}});node["amenity"="cafe"]({{bbox}});node["amenity"="fast_food"]({{bbox}}););out geom;`,
@@ -27,12 +22,10 @@ const poiTypes = {
     }
 };
 
-// Function to fetch POIs from Overpass API
 async function fetchPOIs(type) {
     const bounds = map.getBounds();
     const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
     
-    // Replace all occurrences of {{bbox}} with actual bbox coordinates
     const query = poiTypes[type].query.replace(/\{\{bbox\}\}/g, bbox);
     const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
@@ -52,7 +45,6 @@ async function fetchPOIs(type) {
     }
 }
 
-// Function to create POI marker
 function createPOIMarker(poi, type) {
     const { icon, color } = poiTypes[type];
     
@@ -64,14 +56,12 @@ function createPOIMarker(poi, type) {
             iconAnchor: [15, 15]
         })
     });
-
-    // Get POI information
     const name = poi.tags?.name || `${type.charAt(0).toUpperCase() + type.slice(1)}`;
     const address = poi.tags?.['addr:street'] || poi.tags?.['addr:housenumber'] || 'Address not available';
     const phone = poi.tags?.phone || poi.tags?.['contact:phone'] || 'Not available';
     const website = poi.tags?.website || poi.tags?.['contact:website'] || '';
     
-    // Create popup content
+   
     let popupContent = `
         <div style="max-width: 250px;">
             <h4 style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px; font-weight: bold;">${name}</h4>
@@ -94,15 +84,13 @@ function createPOIMarker(poi, type) {
     return marker;
 }
 
-// Function to show POIs
+
 async function showPOIs() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     loadingIndicator.style.display = 'block';
 
-    // Clear existing POI markers
     clearPOIs();
 
-    // Get active filters
     const activeFilters = getActiveFilters();
 
     try {
@@ -120,18 +108,15 @@ async function showPOIs() {
                 }
             });
         }
-
-        // Show POI filters
         showPOIFilters();
         poisVisible = true;
         
-        // Update button text
+
         const showPoisBtn = document.getElementById('showPoisBtn');
         if (showPoisBtn) {
             showPoisBtn.textContent = 'Hide POIs';
         }
-        
-        // Show success message
+    
         console.log(`Loaded ${totalPOIs} POIs successfully`);
         
     } catch (error) {
@@ -142,26 +127,21 @@ async function showPOIs() {
     }
 }
 
-// Function to clear POI markers
 function clearPOIs() {
     poiMarkers.forEach(poiData => {
         map.removeLayer(poiData.marker);
     });
     poiMarkers = [];
 }
-
-// Function to get active filters
 function getActiveFilters() {
     const activeButtons = document.querySelectorAll('#poiFilters .poi-filter-btn.active');
     return Array.from(activeButtons).map(btn => btn.dataset.type);
 }
 
-// Function to show POI filters
 function showPOIFilters() {
     const filtersContainer = document.getElementById('poiFilters');
     
     if (!filtersContainer.querySelector('.poi-filter-btn')) {
-        // Create filter buttons if they don't exist
         filtersContainer.innerHTML = '';
         
         Object.keys(poiTypes).forEach(type => {
@@ -181,12 +161,11 @@ function showPOIFilters() {
                 transition: all 0.3s ease;
             `;
             
-            // Add click event
             button.addEventListener('click', function() {
                 this.classList.toggle('active');
                 updateFilterStyles();
                 if (poisVisible) {
-                    showPOIs(); // Refresh POIs with new filters
+                    showPOIs(); 
                 }
             });
             
@@ -199,7 +178,7 @@ function showPOIFilters() {
     filtersContainer.style.display = 'block';
 }
 
-// Function to update filter button styles
+
 function updateFilterStyles() {
     document.querySelectorAll('.poi-filter-btn').forEach(btn => {
         if (btn.classList.contains('active')) {
@@ -212,7 +191,6 @@ function updateFilterStyles() {
     });
 }
 
-// Function to toggle POIs
 function togglePOIs() {
     if (poisVisible) {
         clearPOIs();
@@ -227,14 +205,13 @@ function togglePOIs() {
     }
 }
 
-// Function to filter POIs by type
 function filterPOIsByType(activeTypes) {
-    // Clear current markers
+  
     poiMarkers.forEach(poiData => {
         map.removeLayer(poiData.marker);
     });
     
-    // Show only active types
+
     poiMarkers.forEach(poiData => {
         if (activeTypes.includes(poiData.type)) {
             poiData.marker.addTo(map);
@@ -242,9 +219,9 @@ function filterPOIsByType(activeTypes) {
     });
 }
 
-// Function to initialize POI functionality
+
 function initializePOIs() {
-    // Create Show POIs button if it doesn't exist
+
     let showPoisBtn = document.getElementById('showPoisBtn');
     if (!showPoisBtn) {
         showPoisBtn = document.createElement('button');
@@ -274,15 +251,15 @@ function initializePOIs() {
             this.style.transform = 'translateY(0)';
         });
         
-        // Find the form group that contains the existing buttons (Find Path, Reset, Show All Locations)
+       
         const formGroups = document.querySelectorAll('.form-group');
         let targetFormGroup = null;
         
-        // Look for the form group that contains buttons
+    
         formGroups.forEach(group => {
             const buttons = group.querySelectorAll('button');
             if (buttons.length > 0) {
-                // Check if it contains the main action buttons
+               
                 const hasMainButtons = Array.from(buttons).some(btn => 
                     btn.id === 'findPathBtn' || btn.id === 'resetBtn' || btn.id === 'showAllLocationsBtn'
                 );
@@ -292,11 +269,10 @@ function initializePOIs() {
             }
         });
         
-        // If we found the target form group, add the button there
         if (targetFormGroup) {
             targetFormGroup.appendChild(showPoisBtn);
         } else {
-            // Fallback: create a new form group and add it after the route mode selector
+        
             const routeModeSelector = document.querySelector('.route-mode-selector');
             if (routeModeSelector) {
                 const newFormGroup = document.createElement('div');
@@ -307,10 +283,9 @@ function initializePOIs() {
         }
     }
     
-    // Add event listener
+
     showPoisBtn.addEventListener('click', togglePOIs);
     
-    // Create POI filters container if it doesn't exist
     let filtersContainer = document.getElementById('poiFilters');
     if (!filtersContainer) {
         filtersContainer = document.createElement('div');
@@ -320,7 +295,7 @@ function initializePOIs() {
             display: none;
         `;
         
-        // Insert after the Show POIs button's form group
+
         const showPoisButton = document.getElementById('showPoisBtn');
         if (showPoisButton && showPoisButton.parentNode) {
             showPoisButton.parentNode.parentNode.insertBefore(filtersContainer, showPoisButton.parentNode.nextSibling);
@@ -328,11 +303,10 @@ function initializePOIs() {
     }
 }
 
-// Function to enhance existing reset functionality
 function enhanceResetFunctionality() {
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) {
-        // Store original reset function
+   
         const originalReset = resetBtn.onclick;
         
         resetBtn.addEventListener('click', function() {
@@ -345,7 +319,7 @@ function enhanceResetFunctionality() {
                 showPoisBtn.textContent = 'Show POIs';
             }
             
-            // Reset filter buttons to active state
+           
             document.querySelectorAll('.poi-filter-btn').forEach(btn => {
                 btn.classList.add('active');
             });
@@ -354,9 +328,8 @@ function enhanceResetFunctionality() {
     }
 }
 
-// Initialize POI functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait for map to be initialized
+
     setTimeout(() => {
         if (typeof map !== 'undefined') {
             initializePOIs();
@@ -368,7 +341,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
 });
 
-// If map is already available, initialize immediately
 if (typeof map !== 'undefined') {
     initializePOIs();
     enhanceResetFunctionality();

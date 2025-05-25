@@ -7,18 +7,17 @@ let graph = {};
 let routeLayer;
 let sourceMarker = null;
 let destinationMarker = null;
-let routingAlgorithm = 'api'; // Default routing algorithm
+let routingAlgorithm = 'api'; 
 let currentRouteMode = 'driving'; // Default transport mode
-let isSelectingSource = true; // Track which location we're selecting
+let isSelectingSource = true; 
 
-// In-memory storage (replaces localStorage for Claude.ai compatibility)
 let storedLocationData = {
     sourceLocation: null,
     destLocation: null,
     transportMode: 'driving'
 };
 
-// Map configuration
+
 const HALDWANI_CENTER = [29.2183, 79.5130];
 const HALDWANI_ZOOM = 13;
 
@@ -48,23 +47,18 @@ const markerIcons = {
 window.onload = function() {
     console.log('🚀 Initializing Travel Mate Application...');
     
-    // Initialize map first
     initMap();
-    
-    // Load road data from GeoJSON and setup everything else
+
     loadRoadDataFromGeoJSON();
     
-    // Setup event listeners
     setupEventListeners();
-    
-    // Set default algorithm
+
     setRoutingAlgorithm('api');
     
     console.log('✅ Initialization complete');
 };
 
 function setupEventListeners() {
-    // Route calculation buttons
     const findPathBtn = document.getElementById('findPathBtn');
     if (findPathBtn) {
         findPathBtn.addEventListener('click', handleFindPathClick);
@@ -79,8 +73,7 @@ function setupEventListeners() {
     if (showAllBtn) {
         showAllBtn.addEventListener('click', showAllLocations);
     }
-    
-    // Routing algorithm buttons
+
     const apiBtn = document.getElementById('apiRouteBtn');
     if (apiBtn) {
         apiBtn.addEventListener('click', () => setRoutingAlgorithm('api'));
@@ -96,7 +89,7 @@ function setupEventListeners() {
         astarBtn.addEventListener('click', () => setRoutingAlgorithm('astar'));
     }
     
-    // Transport mode selection
+   
     setupTransportModeListeners();
 }
 
@@ -127,24 +120,24 @@ function setupTransportModeListeners() {
 function initMap() {
     console.log('🗺️ Initializing map...');
     
-    // Create map instance
+
     map = L.map('map').setView(HALDWANI_CENTER, HALDWANI_ZOOM);
     
-    // Add OpenStreetMap tile layer
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
     }).addTo(map);
     
-    // Create route layer
+  
     routeLayer = L.layerGroup().addTo(map);
     
-    // Add click event for marker placement with improved UX
+    
     map.on('click', function(event) {
         handleMapClick(event);
     });
     
-    // Add cursor styling for better UX
+   
     map.getContainer().style.cursor = 'crosshair';
     
     console.log('✅ Map initialized');
@@ -156,7 +149,7 @@ function handleMapClick(event) {
         lng: event.latlng.lng
     };
     
-    // Find nearest road node
+
     const nearestNode = findNearestNode(clickedLocation);
     
     if (!nearestNode) {
@@ -164,19 +157,19 @@ function handleMapClick(event) {
         return;
     }
     
-    // Use the nearest node coordinates for better routing
+
     const nodeLocation = {
         lat: nearestNode.lat,
         lng: nearestNode.lng
     };
     
     if (!sourceMarker) {
-        // Place source marker
+       
         placeMarker(nodeLocation, 'source');
         updateDropdownSelection('sourceLocation', nearestNode);
         showLocationNotification('Source location set: ' + nearestNode.name, 'success');
         
-        // Update map cursor for destination selection
+        
         map.getContainer().style.cursor = 'crosshair';
         
     } else if (!destinationMarker) {
@@ -194,19 +187,17 @@ function handleMapClick(event) {
         }, 500);
         
     } else {
-        // Both markers exist, reset and start over
         resetMap();
         placeMarker(nodeLocation, 'source');
         updateDropdownSelection('sourceLocation', nearestNode);
         showLocationNotification('Reset map. Source location set: ' + nearestNode.name, 'info');
         
-        // Update cursor for destination selection
+       
         map.getContainer().style.cursor = 'crosshair';
     }
 }
 
 function showLocationNotification(message, type = 'info') {
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `location-notification ${type}`;
     notification.textContent = message;
@@ -290,14 +281,12 @@ function convertGeoJSONToGraph(geojson) {
     const edges = [];
     const coordToId = new Map();
     let nodeIdCounter = 1;
-    
-    // Process each feature (road segment)
+
     for (const feature of geojson.features) {
         if (feature.geometry.type === "LineString") {
             const coords = feature.geometry.coordinates;
             const properties = feature.properties || {};
             
-            // Extract road name from various possible properties
             const roadName = properties.name || 
                            properties.highway || 
                            properties.ref || 
@@ -305,12 +294,12 @@ function convertGeoJSONToGraph(geojson) {
                            properties.tiger_name_base ||
                            "Unnamed Road";
 
-            // Process each coordinate pair in the linestring
+  
             for (let i = 0; i < coords.length; i++) {
                 const [lng, lat] = coords[i];
                 const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
 
-                // Add node if it doesn't exist
+               
                 if (!coordToId.has(key)) {
                     const id = "n" + nodeIdCounter++;
                     coordToId.set(key, id);
@@ -323,12 +312,11 @@ function convertGeoJSONToGraph(geojson) {
                     });
                 }
 
-                // Add edge to next coordinate (if exists)
                 if (i < coords.length - 1) {
                     const [lng2, lat2] = coords[i + 1];
                     const key2 = `${lat2.toFixed(6)},${lng2.toFixed(6)}`;
 
-                    // Ensure next node exists
+
                     if (!coordToId.has(key2)) {
                         const id = "n" + nodeIdCounter++;
                         coordToId.set(key2, id);
@@ -413,7 +401,7 @@ function createGraph() {
     
     console.log(`✅ Graph created with ${Object.keys(graph).length} nodes`);
     
-    // Make graph globally available for algorithms
+ 
     window.roadGraph = graph;
 }
 
@@ -438,11 +426,10 @@ function populateLocationDropdowns() {
         return;
     }
     
-    // Clear existing options
     sourceDropdown.innerHTML = '<option value="">Click map to select or choose from list</option>';
     destinationDropdown.innerHTML = '<option value="">Click map to select or choose from list</option>';
     
-    // Group nodes by name to avoid duplicates and get unique roads
+    
     const uniqueLocations = new Map();
     haldwaniData.nodes.forEach(node => {
         const key = node.name.toLowerCase();
@@ -509,7 +496,7 @@ function updateDropdownSelection(dropdownId, node) {
             }
         }
         
-        // If no exact match, try to find by name
+       
         for (let option of dropdown.options) {
             const optionNode = haldwaniData.nodes.find(n => n.id === option.value);
             if (optionNode && optionNode.name === node.name) {
