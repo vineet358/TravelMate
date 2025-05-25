@@ -43,9 +43,7 @@
             <div class="route-mode-option" data-mode="cycling">Cycling</div>
         </div>
 
-        <button id="compareAlgorithmsBtn" class="btn btn-primary">
-            <i class="fas fa-balance-scale"></i> Compare Algorithms
-        </button>
+        
 
         <div class="form-group">
             <button id="findPathBtn">Find Path</button>
@@ -81,20 +79,6 @@
     <script src="dijsktra.js"></script>
     <script src="Astar.js"></script>
 
-<script>
-    document.getElementById("compareAlgorithmsBtn").addEventListener("click", () => {
-    const source = document.getElementById("sourceLocation").value;
-    const destination = document.getElementById("destinationLocation").value;
-
-    if (!source || !destination) {
-        alert("Please select both source and destination");
-        return;
-    }
-
-    window.location.href = compare.html?source=${encodeURIComponent(source)}&destination=${encodeURIComponent(destination)};
-});
-
-</script>
 
 </body>
 </html>
