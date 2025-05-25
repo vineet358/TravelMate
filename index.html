@@ -11,25 +11,22 @@
 <body>
     <div id="sidebar">
         <h1>TravelMate</h1>
-        
+
         <div class="form-group">
             <label for="sourceLocation">Source Location:</label>
             <select id="sourceLocation">
                 <option value="">Select Source Location</option>
-               
+
             </select>
         </div>
 
-        
-        
         <div class="form-group">
             <label for="destinationLocation">Destination Location:</label>
             <select id="destinationLocation">
                 <option value="">Select Destination Location</option>
-                
+
             </select>
         </div>
-
 
         <div class="routing-algorithm-container">
             <h3>Routing Algorithm</h3>
@@ -39,7 +36,7 @@
                 <button id="astarRouteBtn" class="algorithm-btn">Use A* Algorithm</button>
             </div>
         </div>
-        
+
         <div class="route-mode-selector">
             <div class="route-mode-option active" data-mode="driving">Driving</div>
             <div class="route-mode-option" data-mode="walking">Walking</div>
@@ -49,42 +46,41 @@
         <button id="compareAlgorithmsBtn" class="btn btn-primary">
             <i class="fas fa-balance-scale"></i> Compare Algorithms
         </button>
-        
+
         <div class="form-group">
             <button id="findPathBtn">Find Path</button>
             <button id="resetBtn">Reset</button>
             <button id="showAllLocationsBtn">Show All Locations</button>
         </div>
-        
+
         <div id="routeInfo">
             <!-- Route information will be displayed here -->
         </div>
-        
+
         <div id="poiFilters">
             <!-- POI filters will be populated dynamically -->
         </div>
-        
+
         <div id="poiContainer">
             <!-- POIs will be displayed here -->
         </div>
-        
+
         <div class="attribution">
             © OpenStreetMap contributors | Routing: OpenRouteService | POI data: Overpass API
         </div>
     </div>
-    
+
     <div id="map"></div>
-    
+
     <div class="loading-indicator" id="loadingIndicator">
         <div class="loading-spinner"></div>
         <div>Processing your request...</div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script src="index.js"></script>
-    <script src="data.js"></script>
     <script src="dijsktra.js"></script>
     <script src="Astar.js"></script>
-   
+
 <script>
     document.getElementById("compareAlgorithmsBtn").addEventListener("click", () => {
     const source = document.getElementById("sourceLocation").value;
@@ -95,12 +91,10 @@
         return;
     }
 
-    window.location.href = `compare.html?source=${encodeURIComponent(source)}&destination=${encodeURIComponent(destination)}`;
+    window.location.href = compare.html?source=${encodeURIComponent(source)}&destination=${encodeURIComponent(destination)};
 });
 
 </script>
 
 </body>
 </html>
-
-i want to create 50-50 page layout on one side haldwani map should be shown for dijkstra and other for

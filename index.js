@@ -1,162 +1,106 @@
-        const HALDWANI_CENTER = [29.2183, 79.5130]; // Default center coordinates for Haldwani
-        const HALDWANI_ZOOM = 14; // Default zoom level
-        
-        // API Keys for services
-        const OPENROUTE_API_KEY = "5b3ce3597851110001cf624810c776dba3264d8f9bc9f5bb8c9fc2c5"; // Replace with your actual API key
-        
-        // Global variables
-        let map;
-        let routeLayer;
-        let markers = [];
-        let sourceMarker = null;
-        let destinationMarker = null;
-        let graph; // For storing the graph representation of the road network
-        let activePOITypes = []; // For tracking active POI filters
-        let currentRouteMode = "driving"; // Default route mode
-        let useApiRouting=true;
-        let routingAlgorithm = 'api'; // Default to API routing
-        
-        // Marker icons
-        const markerIcons = {
-            source: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            destination: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            poi: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            })
-        };
-        
-        // POI type icons
-        const poiTypeIcons = {
-            restaurant: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            cafe: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            hotel: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            atm: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            hospital: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            school: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            shop: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-purple.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            place_of_worship: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            fuel: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            })
-        };
+//index.js//
+// ========================================
+// GLOBAL VARIABLES
+// ========================================
+let map;
+let graph = {};
+let routeLayer;
+let sourceMarker = null;
+let destinationMarker = null;
+let routingAlgorithm = 'api'; // Default routing algorithm
+let currentRouteMode = 'driving'; // Default transport mode
+let isSelectingSource = true; // Track which location we're selecting
 
- // Update your window.onload function to include setupComparisonNavigation
+// In-memory storage (replaces localStorage for Claude.ai compatibility)
+let storedLocationData = {
+    sourceLocation: null,
+    destLocation: null,
+    transportMode: 'driving'
+};
+
+// Map configuration
+const HALDWANI_CENTER = [29.2183, 79.5130];
+const HALDWANI_ZOOM = 13;
+
+// Marker icons
+const markerIcons = {
+    source: L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }),
+    destination: L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    })
+};
+
+// ========================================
+// INITIALIZATION
+// ========================================
 window.onload = function() {
-    console.log('Window loaded, initializing...');
+    console.log('🚀 Initializing Travel Mate Application...');
     
+    // Initialize map first
     initMap();
-    createGraph();
-    populateLocationDropdowns();
     
-    // Set up event listeners
-    document.getElementById('findPathBtn').addEventListener('click', handleFindPathClick);
-    document.getElementById('resetBtn').addEventListener('click', resetMap);
-    document.getElementById('showAllLocationsBtn').addEventListener('click', showAllLocations);
+    // Load road data from GeoJSON and setup everything else
+    loadRoadDataFromGeoJSON();
     
-    // Fix the routing algorithm button event listeners
-    document.getElementById('apiRouteBtn').addEventListener('click', function() {
-        setRoutingAlgorithm('api');
-    });
+    // Setup event listeners
+    setupEventListeners();
     
-    document.getElementById('dijkstraRouteBtn').addEventListener('click', function() {
-        setRoutingAlgorithm('dijkstra');
-    });
+    // Set default algorithm
+    setRoutingAlgorithm('api');
     
-    // Fix the A* button ID (make sure the HTML is updated too)
-    document.getElementById('astarRouteBtn').addEventListener('click', function() {
-        setRoutingAlgorithm('astar');
-    });
+    console.log('✅ Initialization complete');
+};
 
-    // Location selectors change handlers
-    document.getElementById('sourceLocation').addEventListener('change', function() {
-        updateSelectedLocation('source', this.value);
-    });
+function setupEventListeners() {
+    // Route calculation buttons
+    const findPathBtn = document.getElementById('findPathBtn');
+    if (findPathBtn) {
+        findPathBtn.addEventListener('click', handleFindPathClick);
+    }
     
-    document.getElementById('destinationLocation').addEventListener('change', function() {
-        updateSelectedLocation('destination', this.value);
-    });
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetMap);
+    }
     
-    // Setup route mode selector
+    const showAllBtn = document.getElementById('showAllLocationsBtn');
+    if (showAllBtn) {
+        showAllBtn.addEventListener('click', showAllLocations);
+    }
+    
+    // Routing algorithm buttons
+    const apiBtn = document.getElementById('apiRouteBtn');
+    if (apiBtn) {
+        apiBtn.addEventListener('click', () => setRoutingAlgorithm('api'));
+    }
+    
+    const dijkstraBtn = document.getElementById('dijkstraRouteBtn');
+    if (dijkstraBtn) {
+        dijkstraBtn.addEventListener('click', () => setRoutingAlgorithm('dijkstra'));
+    }
+    
+    const astarBtn = document.getElementById('astarRouteBtn');
+    if (astarBtn) {
+        astarBtn.addEventListener('click', () => setRoutingAlgorithm('astar'));
+    }
+    
+    // Transport mode selection
+    setupTransportModeListeners();
+}
+
+function setupTransportModeListeners() {
     const routeModeOptions = document.querySelectorAll('.route-mode-option');
     routeModeOptions.forEach(option => {
         option.addEventListener('click', function() {
@@ -169,220 +113,419 @@ window.onload = function() {
             // Update current route mode
             currentRouteMode = this.dataset.mode;
             
-            // Recalculate route if both source and destination are set
+            // Recalculate route if both markers exist
             if (sourceMarker && destinationMarker) {
                 handleFindPathClick();
             }
         });
     });
-    
-    // Setup POI category filters
-    setupPOIFilters();
-    
-    // Set the default routing algorithm
-    setRoutingAlgorithm('api'); // Set default algorithm on load
-    
-    // *** IMPORTANT: Setup comparison navigation here ***
-    setupComparisonNavigation();
-    
-    console.log('Initialization complete');
-};
-
-// Add a backup function to automatically store data when markers are updated
-function storeLocationData() {
-    if (sourceMarker && destinationMarker) {
-        try {
-            const sourceLat = sourceMarker.getLatLng().lat;
-            const sourceLng = sourceMarker.getLatLng().lng;
-            const destLat = destinationMarker.getLatLng().lat;
-            const destLng = destinationMarker.getLatLng().lng;
-            
-            localStorage.setItem('travelMateSourceLocation', 
-                JSON.stringify({lat: sourceLat, lng: sourceLng}));
-            localStorage.setItem('travelMateDestLocation', 
-                JSON.stringify({lat: destLat, lng: destLng}));
-            localStorage.setItem('travelMateTransportMode', currentRouteMode || 'driving');
-            
-            console.log('Location data automatically stored');
-        } catch (error) {
-            console.error('Error auto-storing location data:', error);
-        }
-    }
 }
 
-
-// Enhanced setRoutingAlgorithm function to fix toggling issues
-function setRoutingAlgorithm(algorithm) {
-    console.log('Setting routing algorithm to:', algorithm);
+// ========================================
+// MAP INITIALIZATION
+// ========================================
+function initMap() {
+    console.log('🗺️ Initializing map...');
     
-    // Update the global variable
-    routingAlgorithm = algorithm;
+    // Create map instance
+    map = L.map('map').setView(HALDWANI_CENTER, HALDWANI_ZOOM);
     
-    // Update UI to show active button - fix the A* button ID
-    document.getElementById('apiRouteBtn').classList.remove('active');
-    document.getElementById('dijkstraRouteBtn').classList.remove('active');
-    document.getElementById('astarRouteBtn').classList.remove('active');
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
     
-    // Add active class only to the selected algorithm button
-    if (algorithm === 'api') {
-        document.getElementById('apiRouteBtn').classList.add('active');
-    } else if (algorithm === 'dijkstra') {
-        document.getElementById('dijkstraRouteBtn').classList.add('active');
-    } else if (algorithm === 'astar') {
-        document.getElementById('astarRouteBtn').classList.add('active');
-    }
+    // Create route layer
+    routeLayer = L.layerGroup().addTo(map);
     
-    // Clear existing route display
-    if (routeLayer) {
-        routeLayer.clearLayers();
-    }
+    // Add click event for marker placement with improved UX
+    map.on('click', function(event) {
+        handleMapClick(event);
+    });
     
-    // Recalculate route if both source and destination are set
-    if (sourceMarker && destinationMarker) {
-        console.log('Recalculating route with algorithm:', algorithm);
-        handleFindPathClick();
-    }
+    // Add cursor styling for better UX
+    map.getContainer().style.cursor = 'crosshair';
+    
+    console.log('✅ Map initialized');
 }
 
-// Enhanced handleFindPathClick function with better debugging
-function handleFindPathClick() {
-    // Make sure we have both source and destination
-    if (!sourceMarker || !destinationMarker) {
-        alert('Please select both source and destination locations');
+function handleMapClick(event) {
+    const clickedLocation = {
+        lat: event.latlng.lat,
+        lng: event.latlng.lng
+    };
+    
+    // Find nearest road node
+    const nearestNode = findNearestNode(clickedLocation);
+    
+    if (!nearestNode) {
+        alert('No nearby roads found. Please click closer to a road.');
         return;
     }
     
-    // Show loading indicator
-    document.getElementById('loadingIndicator').style.display = 'block';
+    // Use the nearest node coordinates for better routing
+    const nodeLocation = {
+        lat: nearestNode.lat,
+        lng: nearestNode.lng
+    };
     
-    // Get source and destination positions
-    const sourcePos = sourceMarker.getLatLng();
-    const destPos = destinationMarker.getLatLng();
-    
-    console.log('Calculating route using algorithm:', routingAlgorithm);
-    console.log('From:', sourcePos, 'To:', destPos);
-    
-    // Clear previous route
-    routeLayer.clearLayers();
-    
-    // Use appropriate routing method based on user selection
-    switch (routingAlgorithm) {
-        case 'api':
-            console.log('Using API routing with mode:', currentRouteMode);
-            calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
-            break;
-        case 'dijkstra':
-            console.log('Using Dijkstra algorithm');
-            calculateRouteWithDijkstra(sourcePos, destPos);
-            break;
-        case 'astar':
-            console.log('Using A* algorithm');
-            calculateRouteWithAStar(sourcePos, destPos);
-            break;
-        default:
-            // Default to API routing
-            console.log('Using default API routing');
-            calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
+    if (!sourceMarker) {
+        // Place source marker
+        placeMarker(nodeLocation, 'source');
+        updateDropdownSelection('sourceLocation', nearestNode);
+        showLocationNotification('Source location set: ' + nearestNode.name, 'success');
+        
+        // Update map cursor for destination selection
+        map.getContainer().style.cursor = 'crosshair';
+        
+    } else if (!destinationMarker) {
+        // Place destination marker
+        placeMarker(nodeLocation, 'destination');
+        updateDropdownSelection('destinationLocation', nearestNode);
+        showLocationNotification('Destination location set: ' + nearestNode.name, 'success');
+        
+        // Reset cursor
+        map.getContainer().style.cursor = 'grab';
+        
+        // Automatically calculate route
+        setTimeout(() => {
+            handleFindPathClick();
+        }, 500);
+        
+    } else {
+        // Both markers exist, reset and start over
+        resetMap();
+        placeMarker(nodeLocation, 'source');
+        updateDropdownSelection('sourceLocation', nearestNode);
+        showLocationNotification('Reset map. Source location set: ' + nearestNode.name, 'info');
+        
+        // Update cursor for destination selection
+        map.getContainer().style.cursor = 'crosshair';
     }
 }
-        // Initialize the Leaflet Map centered on Haldwani
-        function initMap() {
-            // Create map instance
-            map = L.map('map').setView(HALDWANI_CENTER, HALDWANI_ZOOM);
+
+function showLocationNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `location-notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// ========================================
+// GEOJSON LOADING AND CONVERSION
+// ========================================
+function loadRoadDataFromGeoJSON() {
+    console.log('📥 Loading road data from roads.geojson...');
+    
+    fetch('roads.geojson')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 GeoJSON loaded successfully');
+            console.log(`📈 Processing ${data.features.length} road features...`);
             
-            // Add OpenStreetMap tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
+            // Convert GeoJSON to graph format
+            const { nodes, edges } = convertGeoJSONToGraph(data);
             
-            // Create a layer group for routes
-            routeLayer = L.layerGroup().addTo(map);
+            // Store globally
+            window.haldwaniData = { nodes, edges };
+            console.log(`✅ Road network processed: ${nodes.length} nodes, ${edges.length} edges`);
             
-            // Add click event to the map for custom location selection
-            map.on('click', function(event) {
-                // If no source is selected, set it as source
-                if (!sourceMarker) {
-                    placeMarker(event.latlng, 'source');
-                } 
-                // If source is selected but no destination, set it as destination
-                else if (!destinationMarker) {
-                    placeMarker(event.latlng, 'destination');
-                    handleFindPathClick();
-                } 
-                // If both are selected, reset and start over with this as source
-                else {
-                    resetMap();
-                    placeMarker(event.latlng, 'source');
+            // Initialize graph and UI
+            createGraph();
+            populateLocationDropdowns();
+            
+            // Show success message
+            showLocationNotification(`Loaded ${nodes.length} locations from Haldwani road network`, 'success');
+            
+        })
+        .catch(error => {
+            console.error('❌ Failed to load roads.geojson:', error);
+            
+            // Create empty fallback data
+            window.haldwaniData = { nodes: [], edges: [] };
+            console.log('⚠️ Using empty fallback data');
+            
+            createGraph();
+            populateLocationDropdowns();
+            
+            showLocationNotification('Failed to load road data. Please check roads.geojson file.', 'error');
+        });
+}
+
+function convertGeoJSONToGraph(geojson) {
+    console.log(`🔄 Converting GeoJSON with ${geojson.features.length} features...`);
+    
+    const nodes = [];
+    const edges = [];
+    const coordToId = new Map();
+    let nodeIdCounter = 1;
+    
+    // Process each feature (road segment)
+    for (const feature of geojson.features) {
+        if (feature.geometry.type === "LineString") {
+            const coords = feature.geometry.coordinates;
+            const properties = feature.properties || {};
+            
+            // Extract road name from various possible properties
+            const roadName = properties.name || 
+                           properties.highway || 
+                           properties.ref || 
+                           properties.addr_street ||
+                           properties.tiger_name_base ||
+                           "Unnamed Road";
+
+            // Process each coordinate pair in the linestring
+            for (let i = 0; i < coords.length; i++) {
+                const [lng, lat] = coords[i];
+                const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+
+                // Add node if it doesn't exist
+                if (!coordToId.has(key)) {
+                    const id = "n" + nodeIdCounter++;
+                    coordToId.set(key, id);
+                    nodes.push({ 
+                        id, 
+                        name: roadName, 
+                        lat: parseFloat(lat.toFixed(6)), 
+                        lng: parseFloat(lng.toFixed(6)),
+                        properties: properties
+                    });
                 }
-            });
+
+                // Add edge to next coordinate (if exists)
+                if (i < coords.length - 1) {
+                    const [lng2, lat2] = coords[i + 1];
+                    const key2 = `${lat2.toFixed(6)},${lng2.toFixed(6)}`;
+
+                    // Ensure next node exists
+                    if (!coordToId.has(key2)) {
+                        const id = "n" + nodeIdCounter++;
+                        coordToId.set(key2, id);
+                        nodes.push({ 
+                            id, 
+                            name: roadName, 
+                            lat: parseFloat(lat2.toFixed(6)), 
+                            lng: parseFloat(lng2.toFixed(6)),
+                            properties: properties
+                        });
+                    }
+
+                    const source = coordToId.get(key);
+                    const target = coordToId.get(key2);
+                    const distance = haversineDistance(lat, lng, lat2, lng2);
+
+                    // Add bidirectional edges for better routing
+                    edges.push({ 
+                        source, 
+                        target, 
+                        distance: parseFloat(distance.toFixed(3)),
+                        roadName: roadName
+                    });
+                }
+            }
         }
+    }
 
-        // Create a graph representation of the road network from haldwaniData
-        function createGraph() {
-            graph = {};
-            
-            // Initialize nodes
-            haldwaniData.nodes.forEach(node => {
-                graph[node.id] = {
-                    name: node.name,
-                    lat: node.lat,
-                    lng: node.lng,
-                    neighbors: []
-                };
-            });
-            
-            // Add edges (connections between nodes)
-            haldwaniData.edges.forEach(edge => {
-                // Add bidirectional edges
-                graph[edge.source].neighbors.push({
-                    id: edge.target,
-                    distance: edge.distance
-                });
-                
-                graph[edge.target].neighbors.push({
-                    id: edge.source,
-                    distance: edge.distance
-                });
-            });
-        }
-       
+    console.log(`✅ Conversion complete: ${nodes.length} nodes, ${edges.length} edges`);
+    return { nodes, edges };
+}
 
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const toRad = deg => deg * Math.PI / 180;
+    const R = 6371; // Earth's radius in km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-// Display selected location details below the dropdowns
-function displaySelectedLocationInfo(type, locationId) {
-    // Get the container element for location info
-    const locationInfoContainer = document.getElementById(`${type}LocationInfo`);
-    
-    if (!locationId || locationId === "") {
-        // Clear the location info if no location is selected
-        locationInfoContainer.innerHTML = "";
-        locationInfoContainer.style.display = "none";
+// ========================================
+// GRAPH CREATION
+// ========================================
+function createGraph() {
+    if (!window.haldwaniData) {
+        console.warn('⚠️ Road data not available, skipping graph creation');
         return;
     }
     
-    // Find the selected location in our data
-    const selectedLocation = haldwaniData.nodes.find(loc => loc.id === locationId);
+    console.log('🔗 Creating graph structure...');
+    graph = {};
     
-    if (selectedLocation) {
-        // Create and display location information
-        locationInfoContainer.innerHTML = `
-            <div class="location-info-card">
-                <h4>${selectedLocation.name}</h4>
-                <p>
-                    <strong>Coordinates:</strong> 
-                    ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}
-                </p>
-            </div>
-        `;
-        locationInfoContainer.style.display = "block";
+    // Initialize nodes
+    haldwaniData.nodes.forEach(node => {
+        graph[node.id] = {
+            name: node.name,
+            lat: node.lat,
+            lng: node.lng,
+            neighbors: []
+        };
+    });
+    
+    // Add edges (bidirectional for road networks)
+    haldwaniData.edges.forEach(edge => {
+        if (graph[edge.source] && graph[edge.target]) {
+            // Add forward edge
+            graph[edge.source].neighbors.push({
+                id: edge.target,
+                distance: edge.distance
+            });
+            
+            // Add reverse edge for bidirectional roads
+            graph[edge.target].neighbors.push({
+                id: edge.source,
+                distance: edge.distance
+            });
+        }
+    });
+    
+    console.log(`✅ Graph created with ${Object.keys(graph).length} nodes`);
+    
+    // Make graph globally available for algorithms
+    window.roadGraph = graph;
+}
+
+// ========================================
+// UI POPULATION
+// ========================================
+function populateLocationDropdowns() {
+    console.log('📋 Populating location dropdowns...');
+    
+    const sourceDropdown = document.getElementById('sourceLocation');
+    const destinationDropdown = document.getElementById('destinationLocation');
+    
+    if (!sourceDropdown || !destinationDropdown) {
+        console.warn('⚠️ Location dropdowns not found in DOM');
+        return;
+    }
+    
+    if (!haldwaniData || !haldwaniData.nodes || haldwaniData.nodes.length === 0) {
+        console.warn('⚠️ No road data available for dropdowns');
+        sourceDropdown.innerHTML = '<option value="">No locations available</option>';
+        destinationDropdown.innerHTML = '<option value="">No locations available</option>';
+        return;
+    }
+    
+    // Clear existing options
+    sourceDropdown.innerHTML = '<option value="">Click map to select or choose from list</option>';
+    destinationDropdown.innerHTML = '<option value="">Click map to select or choose from list</option>';
+    
+    // Group nodes by name to avoid duplicates and get unique roads
+    const uniqueLocations = new Map();
+    haldwaniData.nodes.forEach(node => {
+        const key = node.name.toLowerCase();
+        if (!uniqueLocations.has(key) || uniqueLocations.get(key).name === "Unnamed Road") {
+            uniqueLocations.set(key, node);
+        }
+    });
+    
+    // Sort locations alphabetically
+    const sortedLocations = Array.from(uniqueLocations.values())
+        .filter(location => location.name !== "Unnamed Road")
+        .sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Add named roads to dropdowns
+    sortedLocations.forEach(location => {
+        // Source dropdown
+        const sourceOption = document.createElement('option');
+        sourceOption.value = location.id;
+        sourceOption.textContent = location.name;
+        sourceDropdown.appendChild(sourceOption);
+        
+        // Destination dropdown
+        const destOption = document.createElement('option');
+        destOption.value = location.id;
+        destOption.textContent = location.name;
+        destinationDropdown.appendChild(destOption);
+    });
+    
+    // Setup event listeners
+    setupLocationDropdownListeners();
+    
+    console.log(`✅ Dropdowns populated with ${sortedLocations.length} unique roads`);
+}
+
+function setupLocationDropdownListeners() {
+    const sourceDropdown = document.getElementById('sourceLocation');
+    const destDropdown = document.getElementById('destinationLocation');
+    
+    if (sourceDropdown) {
+        sourceDropdown.addEventListener('change', function() {
+            if (this.value) {
+                updateSelectedLocation('source', this.value);
+            }
+        });
+    }
+    
+    if (destDropdown) {
+        destDropdown.addEventListener('change', function() {
+            if (this.value) {
+                updateSelectedLocation('destination', this.value);
+            }
+        });
     }
 }
 
+function updateDropdownSelection(dropdownId, node) {
+    const dropdown = document.getElementById(dropdownId);
+    if (dropdown && node) {
+        // Try to find exact match first
+        for (let option of dropdown.options) {
+            if (option.value === node.id) {
+                dropdown.value = node.id;
+                return;
+            }
+        }
+        
+        // If no exact match, try to find by name
+        for (let option of dropdown.options) {
+            const optionNode = haldwaniData.nodes.find(n => n.id === option.value);
+            if (optionNode && optionNode.name === node.name) {
+                dropdown.value = option.value;
+                return;
+            }
+        }
+    }
+}
+
+// ========================================
+// LOCATION SELECTION
+// ========================================
 function updateSelectedLocation(type, locationId) {
-    if (!locationId) return;
+    if (!locationId || !haldwaniData) return;
     
-    // Find the selected location in our data
     const selectedLocation = haldwaniData.nodes.find(loc => loc.id === locationId);
     
     if (selectedLocation) {
@@ -391,88 +534,42 @@ function updateSelectedLocation(type, locationId) {
             lng: selectedLocation.lng 
         };
         
-        // Place marker based on type
+        // Place marker
         placeMarker(position, type);
         
-        // Center map on the selected location
+        // Center map on selected location
         map.setView([position.lat, position.lng], 15);
         
-        // Display location information below dropdown
-        displaySelectedLocationInfo(type, locationId);
-        
-        // *** ADD THIS: Store location data automatically ***
+        // Store data
         storeLocationData();
         
-        // If both source and destination are selected, calculate route
+        // Calculate route if both markers exist
         if (sourceMarker && destinationMarker) {
-            handleFindPathClick();
+            setTimeout(() => {
+                handleFindPathClick();
+            }, 500);
         }
-    }
-}
-
-// Update both dropdown event listeners to call displaySelectedLocationInfo
-function setupLocationDropdowns() {
-    // Source dropdown event listener
-    document.getElementById('sourceLocation').addEventListener('change', function() {
-        const selectedLocationId = this.value;
-        updateSelectedLocation('source', selectedLocationId);
-    });
-    
-    // Destination dropdown event listener
-    document.getElementById('destinationLocation').addEventListener('change', function() {
-        const selectedLocationId = this.value;
-        updateSelectedLocation('destination', selectedLocationId);
-    });
-}
-
-// Modify the populateLocationDropdowns function to also create info containers
-function populateLocationDropdowns() {
-    const sourceDropdown = document.getElementById('sourceLocation');
-    const destinationDropdown = document.getElementById('destinationLocation');
-    
-    // Clear existing options
-    sourceDropdown.innerHTML = '<option value="">Select Source Location</option>';
-    destinationDropdown.innerHTML = '<option value="">Select Destination Location</option>';
-    
-    // Add locations from the data file
-    haldwaniData.nodes.forEach(location => {
-        // Create options for source dropdown
-        const sourceOption = document.createElement('option');
-        sourceOption.value = location.id;
-        sourceOption.textContent = location.name;
-        sourceDropdown.appendChild(sourceOption);
         
-        // Create options for destination dropdown
-        const destOption = document.createElement('option');
-        destOption.value = location.id;
-        destOption.textContent = location.name;
-        destinationDropdown.appendChild(destOption);
-    });
-    
-    // Create containers for location information if they don't exist
-    if (!document.getElementById('sourceLocationInfo')) {
-        const sourceInfoContainer = document.createElement('div');
-        sourceInfoContainer.id = 'sourceLocationInfo';
-        sourceInfoContainer.className = 'location-info-container';
-        sourceInfoContainer.style.display = 'none';
-        sourceDropdown.parentNode.insertBefore(sourceInfoContainer, sourceDropdown.nextSibling);
+        // Update map cursor
+        updateMapCursor();
     }
-    
-    if (!document.getElementById('destinationLocationInfo')) {
-        const destInfoContainer = document.createElement('div');
-        destInfoContainer.id = 'destinationLocationInfo';
-        destInfoContainer.className = 'location-info-container';
-        destInfoContainer.style.display = 'none';
-        destinationDropdown.parentNode.insertBefore(destInfoContainer, destinationDropdown.nextSibling);
-    }
-    
-    // Setup event listeners for dropdowns
-    setupLocationDropdowns();
 }
 
-// Modify placeMarker to update location info when a marker is placed or dragged
+function updateMapCursor() {
+    if (!sourceMarker) {
+        map.getContainer().style.cursor = 'crosshair';
+    } else if (!destinationMarker) {
+        map.getContainer().style.cursor = 'crosshair';
+    } else {
+        map.getContainer().style.cursor = 'grab';
+    }
+}
+
+// ========================================
+// MARKER MANAGEMENT
+// ========================================
 function placeMarker(position, type) {
-    // Remove previous marker of the same type if it exists
+    // Remove existing marker of same type
     if (type === 'source' && sourceMarker) {
         map.removeLayer(sourceMarker);
         sourceMarker = null;
@@ -481,176 +578,223 @@ function placeMarker(position, type) {
         destinationMarker = null;
     }
     
-    // Create the marker with appropriate icon
+    // Create new marker
     const marker = L.marker([position.lat, position.lng], {
         icon: markerIcons[type],
-        draggable: true // Make markers draggable
+        draggable: true
     }).addTo(map);
     
+    // Create popup content
+    const nearestNode = findNearestNode(position);
+    const popupContent = createMarkerPopup(position, type, nearestNode);
+    marker.bindPopup(popupContent);
+    
+    // Handle drag end event
+    marker.on('dragend', function() {
+        handleMarkerDrag(marker, type);
+    });
+    
+    // Store marker reference
+    if (type === 'source') {
+        sourceMarker = marker;
+    } else {
+        destinationMarker = marker;
+    }
+    
+    // Store location data
+    storeLocationData();
+    
+    // Update cursor
+    updateMapCursor();
+}
+
+function createMarkerPopup(position, type, nearestNode) {
     const popupContent = document.createElement('div');
     popupContent.className = 'info-window';
     
-    // Add content based on type
-    if (type === 'source') {
-        popupContent.innerHTML = `
-            <h3>Source Location</h3>
-            <p>Latitude: ${position.lat.toFixed(6)}</p>
-            <p>Longitude: ${position.lng.toFixed(6)}</p>
+    const title = type === 'source' ? 'Source Location' : 'Destination Location';
+    
+    popupContent.innerHTML = `
+        <h3>${title}</h3>
+        <p><strong>Coordinates:</strong> ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}</p>
+    `;
+    
+    if (nearestNode) {
+        popupContent.innerHTML += `
+            <p><strong>Nearest Road:</strong> ${nearestNode.name}</p>
+            <p><strong>Distance to Road:</strong> ${(getDistance(position, nearestNode) * 1000).toFixed(0)}m</p>
         `;
-        
-        // Find nearest known location
-        const nearestNode = findNearestNode(position);
-        if (nearestNode) {
-            popupContent.innerHTML += `
-                <p>Nearest location: ${nearestNode.name}</p>
-                <button class="snap-to-location" data-id="${nearestNode.id}" data-type="source">Snap to ${nearestNode.name}</button>
-            `;
-        }
-    } else {
-        popupContent.innerHTML = `
-            <h3>Destination Location</h3>
-            <p>Latitude: ${position.lat.toFixed(6)}</p>
-            <p>Longitude: ${position.lng.toFixed(6)}</p>
-        `;
-        
-        // Find nearest known location
-        const nearestNode = findNearestNode(position);
-        if (nearestNode) {
-            popupContent.innerHTML += `
-                <p>Nearest location: ${nearestNode.name}</p>
-                <button class="snap-to-location" data-id="${nearestNode.id}" data-type="destination">Snap to ${nearestNode.name}</button>
-            `;
-        }
-        setTimeout(storeLocationData, 100);
     }
     
-    // Bind the popup to the marker
-    marker.bindPopup(popupContent);
+    return popupContent;
+}
+
+function handleMarkerDrag(marker, type) {
+    const newPos = marker.getLatLng();
+    const nearestNode = findNearestNode(newPos);
     
-    // Add event listener for the snap button (will be added when popup is opened)
-    marker.on('popupopen', function() {
-        const snapButton = document.querySelector('.snap-to-location');
-        if (snapButton) {
-            snapButton.addEventListener('click', function() {
-                const nodeId = this.dataset.id;
-                const markerType = this.dataset.type;
-                const node = haldwaniData.nodes.find(n => n.id === nodeId);
-                
-                // Update dropdown selection
-                document.getElementById(`${markerType}Location`).value = nodeId;
-                
-                // Update marker position
-                updateSelectedLocation(markerType, nodeId);
-                
-                // Close popup
-                marker.closePopup();
-            });
-        }
-    });
+    if (nearestNode) {
+        // Snap to nearest road node for better routing
+        marker.setLatLng([nearestNode.lat, nearestNode.lng]);
+        
+        // Update dropdown
+        updateDropdownSelection(`${type}Location`, nearestNode);
+        
+        // Update popup
+        const popupContent = createMarkerPopup(nearestNode, type, nearestNode);
+        marker.setPopupContent(popupContent);
+        
+        showLocationNotification(`${type} snapped to: ${nearestNode.name}`, 'info');
+    }
     
-    // Handle marker drag end event
-    marker.on('dragend', function() {
-        const newPos = marker.getLatLng();
-        
-        // Update location info with custom coordinates
-        const locationInfoContainer = document.getElementById(`${type}LocationInfo`);
-        locationInfoContainer.innerHTML = `
-            <div class="location-info-card">
-                <h4>Custom Location</h4>
-                <p>
-                    <strong>Coordinates:</strong> 
-                    ${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}
-                </p>
-            </div>
-        `;
-        locationInfoContainer.style.display = "block";
-        
-        // Clear dropdown selection
-        document.getElementById(`${type}Location`).value = '';
-        
-        // Recalculate route if both markers are present
-        if (sourceMarker && destinationMarker) {
+    // Store data and recalculate route
+    storeLocationData();
+    
+    if (sourceMarker && destinationMarker) {
+        setTimeout(() => {
             handleFindPathClick();
+        }, 500);
+    }
+}
+
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
+function findNearestNode(position) {
+    if (!haldwaniData || !haldwaniData.nodes) return null;
+    
+    let nearestNode = null;
+    let minDistance = Infinity;
+    
+    haldwaniData.nodes.forEach(node => {
+        const distance = getDistance(
+            { lat: position.lat, lng: position.lng },
+            { lat: node.lat, lng: node.lng }
+        );
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestNode = node;
         }
     });
     
-    // Store the marker in appropriate variable
-    if (type === 'source') {
-        sourceMarker = marker;
-        
-        // If custom location (not from dropdown), show custom location info
-        if (document.getElementById('sourceLocation').value === '') {
-            const locationInfoContainer = document.getElementById('sourceLocationInfo');
-            locationInfoContainer.innerHTML = `
-                <div class="location-info-card">
-                    <h4>Custom Location</h4>
-                    <p>
-                        <strong>Coordinates:</strong> 
-                        ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}
-                    </p>
-                </div>
-            `;
-            locationInfoContainer.style.display = "block";
-        }
-    } else {
-        destinationMarker = marker;
-        
-        // If custom location (not from dropdown), show custom location info
-        if (document.getElementById('destinationLocation').value === '') {
-            const locationInfoContainer = document.getElementById('destinationLocationInfo');
-            locationInfoContainer.innerHTML = `
-                <div class="location-info-card">
-                    <h4>Custom Location</h4>
-                    <p>
-                        <strong>Coordinates:</strong> 
-                        ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}
-                    </p>
-                </div>
-            `;
-            locationInfoContainer.style.display = "block";
+    return nearestNode;
+}
+
+function getDistance(point1, point2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (point2.lat - point1.lat) * Math.PI / 180;
+    const dLon = (point2.lng - point1.lng) * Math.PI / 180;
+    
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(point1.lat * Math.PI / 180) * Math.cos(point2.lat * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// ========================================
+// DATA STORAGE (In-Memory)
+// ========================================
+function storeLocationData() {
+    if (sourceMarker && destinationMarker) {
+        try {
+            const sourceLat = sourceMarker.getLatLng().lat;
+            const sourceLng = sourceMarker.getLatLng().lng;
+            const destLat = destinationMarker.getLatLng().lat;
+            const destLng = destinationMarker.getLatLng().lng;
+            
+            storedLocationData.sourceLocation = {lat: sourceLat, lng: sourceLng};
+            storedLocationData.destLocation = {lat: destLat, lng: destLng};
+            storedLocationData.transportMode = currentRouteMode || 'driving';
+            
+            console.log('📄 Location data stored:', storedLocationData);
+        } catch (error) {
+            console.error('❌ Error storing location data:', error);
         }
     }
 }
 
-        // Find the nearest node in our data to the given position
-        function findNearestNode(position) {
-            let nearestNode = null;
-            let minDistance = Infinity;
-            
-            haldwaniData.nodes.forEach(node => {
-                const distance = getDistance(
-                    { lat: position.lat, lng: position.lng },
-                    { lat: node.lat, lng: node.lng }
-                );
-                
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestNode = node;
-                }
-            });
-            
-            return nearestNode;
-        }
+function getStoredLocationData() {
+    return storedLocationData;
+}
 
-        // Calculate distance between two points in km using the Haversine formula
-        function getDistance(point1, point2) {
-            const R = 6371; // Earth's radius in km
-            const dLat = (point2.lat - point1.lat) * Math.PI / 180;
-            const dLon = (point2.lng - point1.lng) * Math.PI / 180;
-            
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(point1.lat * Math.PI / 180) * Math.cos(point2.lat * Math.PI / 180) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-            
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-        function calculateRouteWithAPI(sourcePos, destPos, mode) {
-    // API endpoint
+// ========================================
+// ROUTING ALGORITHM SELECTION
+// ========================================
+function setRoutingAlgorithm(algorithm) {
+    console.log(`🔧 Setting routing algorithm to: ${algorithm}`);
+    
+    routingAlgorithm = algorithm;
+    
+    // Update UI
+    document.getElementById('apiRouteBtn')?.classList.remove('active');
+    document.getElementById('dijkstraRouteBtn')?.classList.remove('active');
+    document.getElementById('astarRouteBtn')?.classList.remove('active');
+    
+    const activeBtn = document.getElementById(`${algorithm}RouteBtn`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    
+    // Clear existing route
+    if (routeLayer) {
+        routeLayer.clearLayers();
+    }
+    
+    // Recalculate route if both markers exist
+    if (sourceMarker && destinationMarker) {
+        console.log(`🔄 Recalculating route with ${algorithm}`);
+        handleFindPathClick();
+    }
+}
+
+// ========================================
+// ROUTE CALCULATION
+// ========================================
+function handleFindPathClick() {
+    if (!sourceMarker || !destinationMarker) {
+        alert('Please select both source and destination locations by clicking on the map or using the dropdowns');
+        return;
+    }
+    
+    // Show loading indicator
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'block';
+    }
+    
+    const sourcePos = sourceMarker.getLatLng();
+    const destPos = destinationMarker.getLatLng();
+    
+    console.log(`🚗 Calculating route: ${routingAlgorithm} algorithm`);
+    console.log(`📍 From: ${sourcePos.lat}, ${sourcePos.lng}`);
+    console.log(`📍 To: ${destPos.lat}, ${destPos.lng}`);
+    
+    // Clear previous route
+    routeLayer.clearLayers();
+    
+    // Calculate route based on selected algorithm
+    switch (routingAlgorithm) {
+        case 'api':
+            calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
+            break;
+        case 'dijkstra':
+            calculateRouteWithDijkstra(sourcePos, destPos);
+            break;
+        case 'astar':
+            calculateRouteWithAStar(sourcePos, destPos);
+            break;
+        default:
+            calculateRouteWithAPI(sourcePos, destPos, currentRouteMode);
+    }
+}
+
+function calculateRouteWithAPI(sourcePos, destPos, mode) {
     const apiUrl = 'https://api.openrouteservice.org/v2/directions/';
     
-    // Map route modes to ORS profiles
     const profileMap = {
         'driving': 'driving-car',
         'walking': 'foot-walking',
@@ -658,873 +802,443 @@ function placeMarker(position, type) {
     };
     
     const profile = profileMap[mode] || 'driving-car';
-
-   
     const OPENROUTE_API_KEY = '5b3ce3597851110001cf62483af92f8f1bc04a3fae4b61c61b1a43e1';
 
     const originalUrl = `${apiUrl}${profile}?api_key=${OPENROUTE_API_KEY}&start=${sourcePos.lng},${sourcePos.lat}&end=${destPos.lng},${destPos.lat}`;
-    
-    
     const corsProxyUrl = 'http://localhost:8080/';
-
     const requestUrl = corsProxyUrl + originalUrl;
     
-    console.log(`Requesting route from OpenRouteService: ${profile} mode`);
+    console.log(`🌐 Requesting route from API: ${profile} mode`);
 
-    // Make the API request
     fetch(requestUrl)
         .then(response => {
             if (!response.ok) {
-                console.error(`API responded with status: ${response.status}`);
-                return response.text().then(text => {
-                    console.error(`API error response: ${text}`);
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                });
+                throw new Error(`HTTP error! Status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Successfully received route data from API');
-            // Display the route on the map
+            console.log('✅ Route data received from API');
             displayRouteFromAPI(data);
         })
         .catch(error => {
-            console.error('Error fetching route:', error);
-            alert(`Failed to get route: ${error.message}. Falling back to local calculation.`);
+            console.error('❌ API route calculation failed:', error);
+            showLocationNotification(`API routing failed: ${error.message}. Using local algorithms.`, 'error');
             
-                // Determine which algorithm to use as fallback
-                if (routingAlgorithm === 'astar') {
-                    calculateRouteWithAStar(sourcePos, destPos);
-                } else {
-                    calculateRouteWithDijkstra(sourcePos, destPos);
-                }
-            })
+            // Fallback to local algorithms
+            if (routingAlgorithm === 'astar') {
+                calculateRouteWithAStar(sourcePos, destPos);
+            } else {
+                calculateRouteWithDijkstra(sourcePos, destPos);
+            }
+        })
         .finally(() => {
-            // Hide loading indicator if any
             const loader = document.getElementById('loadingIndicator');
             if (loader) loader.style.display = 'none';
         });
 }
 
-
 function displayRouteFromAPI(routeData) {
-    // Clear previous route
     routeLayer.clearLayers();
     
     try {
-        console.log('Route data:', routeData);
-        
-        if (!routeData.features || !routeData.features[0] || !routeData.features[0].geometry) {
-            throw new Error('Invalid route data structure received from API');
+        if (!routeData.features?.[0]?.geometry) {
+            throw new Error('Invalid route data structure');
         }
         
-        // Extract route geometry from the response
         const geometry = routeData.features[0].geometry.coordinates;
-        
-        console.log(`Route has ${geometry.length} coordinate points`);
-        
-        // Convert to Leaflet format (swap lat and lng)
         const routePoints = geometry.map(coord => [coord[1], coord[0]]);
         
-        // Create polyline with route
+        // Create route polyline
         const routePolyline = L.polyline(routePoints, {
             color: '#4285F4',
             weight: 6,
             opacity: 0.7
         }).addTo(routeLayer);
         
-        // Zoom map to fit the route
-        map.fitBounds(routePolyline.getBounds(), {
-            padding: [50, 50]
-        });
+        // Fit map to route
+        map.fitBounds(routePolyline.getBounds(), { padding: [20, 20] });
         
-        // Extract route summary
-        const summary = routeData.features[0].properties.summary;
+        // Extract route information
+        const properties = routeData.features[0].properties;
+        const summary = properties.summary || {};
         
         // Display route information
         displayRouteInfo({
-            distance: summary.distance / 1000, // Convert to km
-            duration: summary.duration / 60,   // Convert to minutes
-            points: routePoints
+            distance: (summary.distance / 1000).toFixed(2), // Convert to km
+            duration: Math.round(summary.duration / 60), // Convert to minutes
+            algorithm: 'OpenRouteService API',
+            mode: currentRouteMode
         });
         
-        // Fetch POIs along the route
-        fetchPOIsAlongRoute(routePoints);
+        console.log(`✅ API route displayed: ${(summary.distance / 1000).toFixed(2)}km, ${Math.round(summary.duration / 60)}min`);
         
     } catch (error) {
-        console.error('Error processing route data:', error);
-        alert('Error processing route data. Please try again.');
+        console.error('❌ Error displaying API route:', error);
+        showLocationNotification('Error displaying route. Using fallback algorithm.', 'error');
+        
+        // Fallback to local algorithms
+        calculateRouteWithDijkstra(sourcePos, destPos);
     }
 }
 
-        function displayRoute(routeData) {
-            // Clear previous route
-            routeLayer.clearLayers();
-            
-            // Create polyline from route points
-            const routePolyline = L.polyline(routeData.points, {
-                color: '#4285F4',
-                weight: 6,
-                opacity: 0.7
-            }).addTo(routeLayer);
-            
-            // Zoom map to fit the route
-            map.fitBounds(routePolyline.getBounds(), {
-                padding: [50, 50]
-            });
-            
-            // Display route information
-            displayRouteInfo(routeData);
-            
-            // Fetch POIs along the route
-            fetchPOIsAlongRoute(routeData.points);
-        }
-
-        // Display route information in the sidebar
-        function displayRouteInfo(routeData) {
-            const routeInfoDiv = document.getElementById('routeInfo');
-            
-            // Format distance and duration
-            const distance = routeData.distance.toFixed(2);
-            
-            // Get hours and minutes from duration (in minutes)
-            const hours = Math.floor(routeData.duration / 60);
-            const minutes = Math.round(routeData.duration % 60);
-            let durationStr = '';
-            
-            if (hours > 0) {
-                durationStr += `${hours} hour${hours > 1 ? 's' : ''} `;
-            }
-            
-            if (minutes > 0 || hours === 0) {
-                durationStr += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-            }
-            
-            // Get travel mode
-            const modeStr = currentRouteMode.charAt(0).toUpperCase() + currentRouteMode.slice(1);
-            
-            // Create HTML for route info
-            routeInfoDiv.innerHTML = `
-                <div class="route-detail">
-                    <h3>Route Information</h3>
-                    <p><strong>Distance:</strong> ${distance} km</p>
-                    <p><strong>Estimated Duration:</strong> ${durationStr}</p>
-                    <p><strong>Travel Mode:</strong> ${modeStr}</p>
-                </div>
-            `;
-        }
-
-   
-
-
-
-// Add the synthetic POI generation function back as a fallback
-function generateSyntheticPOIs(routePoints, poiTypes) {
-    const pois = [];
-    const numPOIs = Math.floor(Math.random() * 10) + 5; // Generate 5-15 POIs
+function calculateRouteWithDijkstra(sourcePos, destPos) {
+    console.log('🔍 Calculating route with Dijkstra algorithm...');
     
-    // POI name templates based on type
-    const poiNameTemplates = {
-        restaurant: ['Tasty', 'Spicy', 'Royal', 'Delicious', 'Golden'],
-        cafe: ['Coffee', 'Chai', 'Tea', 'Mountain', 'Cozy'],
-        hotel: ['Comfort', 'Luxury', 'Grand', 'Royal', 'Paradise'],
-        atm: ['State Bank', 'ICICI', 'HDFC', 'PNB', 'Axis'],
-        hospital: ['City', 'General', 'Memorial', 'Care', 'Medical'],
-        school: ['Public', 'International', 'Modern', 'St. Mary', 'Central'],
-        shop: ['Mega', 'Super', 'City', 'Grand', 'Discount'],
-        place_of_worship: ['Temple', 'Church', 'Mosque', 'Gurudwara', 'Shrine'],
-        fuel: ['HP', 'Indian Oil', 'Bharat', 'Reliance', 'Essar']
-    };
-    
-    // POI suffix templates based on type
-    const poiSuffixTemplates = {
-        restaurant: ['Restaurant', 'Dhaba', 'Food Corner', 'Kitchen', 'Eatery'],
-        cafe: ['Cafe', 'Coffee House', 'Tea House', 'Bistro', 'Lounge'],
-        hotel: ['Hotel', 'Inn', 'Resort', 'Lodge', 'Homestay'],
-        atm: ['ATM', 'Bank ATM', 'Cash Point', 'Money Center', 'Banking Point'],
-        hospital: ['Hospital', 'Clinic', 'Medical Center', 'Healthcare', 'Nursing Home'],
-        school: ['School', 'Academy', 'Institute', 'College', 'Education Center'],
-        shop: ['Store', 'Mart', 'Market', 'Shop', 'Emporium'],
-        place_of_worship: ['Temple', 'Church', 'Mosque', 'Gurudwara', 'Shrine'],
-        fuel: ['Petrol Pump', 'Gas Station', 'Fuel Station', 'Petrol Station', 'Filling Station']
-    };
-    
-    // Generate POIs
-    for (let i = 0; i < numPOIs; i++) {
-        // Pick a random POI type from the list
-        const poiType = poiTypes[Math.floor(Math.random() * poiTypes.length)];
-        
-        // Pick a random point along the route
-        const routePoint = routePoints[Math.floor(Math.random() * routePoints.length)];
-        
-        // Add some random offset
-        const lat = routePoint[0] + (Math.random() - 0.5) * 0.01;
-        const lng = routePoint[1] + (Math.random() - 0.5) * 0.01;
-        
-        // Generate a random name
-        const prefix = (poiNameTemplates[poiType] || ['Local'])[Math.floor(Math.random() * (poiNameTemplates[poiType] || ['Local']).length)];
-        const suffix = (poiSuffixTemplates[poiType] || ['Place'])[Math.floor(Math.random() * (poiSuffixTemplates[poiType] || ['Place']).length)];
-        
-        // Create POI object
-        pois.push({
-            id: `poi-synthetic-${i}`,
-            name: `${prefix} ${suffix}`,
-            type: poiType,
-            lat: lat,
-            lng: lng,
-            address: `${Math.floor(Math.random() * 100) + 1} ${['Main Road', 'Mall Road', 'Nainital Road', 'Railway Road', 'MG Road'][Math.floor(Math.random() * 5)]}, Nearby`,
-            rating: (Math.random() * 2 + 3).toFixed(1) // Random rating between 3.0 and 5.0
-        });
-    }
-    
-    return pois;
-}
-     // Fetch POIs along the route
-function fetchPOIsAlongRoute(routePoints) {
-    // Clear previous POIs
-    document.getElementById('poiContainer').innerHTML = '<div class="poi-loading">Loading nearby points of interest...</div>';
-    
-    // Remove previous POI markers
-    markers.forEach(marker => {
-        if (marker !== sourceMarker && marker !== destinationMarker) {
-            map.removeLayer(marker);
-        }
-    });
-    
-    // Keep only source and destination markers
-    markers = markers.filter(marker => marker === sourceMarker || marker === destinationMarker);
-    
-    // Define POI types to search for - limit to only the 5 specific types we want
-    const poiTypesToSearch = ['restaurant', 'cafe', 'hotel', 'hospital', 'school', 'atm'];
-    
-    // Get source and destination positions for proximity filtering later
-    const sourcePos = sourceMarker.getLatLng();
-    const destPos = destinationMarker.getLatLng();
-    
-    // Find min and max coordinates to define the search area
-    // Create a tighter bounding box by using route points plus source and destination
-    let minLat = Math.min(sourcePos.lat, destPos.lat);
-    let maxLat = Math.max(sourcePos.lat, destPos.lat);
-    let minLng = Math.min(sourcePos.lng, destPos.lng);
-    let maxLng = Math.max(sourcePos.lng, destPos.lng);
-    
-    // Include route points in the bounding box
-    routePoints.forEach(point => {
-        minLat = Math.min(minLat, point[0]);
-        maxLat = Math.max(maxLat, point[0]);
-        minLng = Math.min(minLng, point[1]);
-        maxLng = Math.max(maxLng, point[1]);
-    });
-    
-    // Add a smaller buffer (in degrees) to keep POIs closer to route
-    const buffer = 0.001; // Roughly 100-200m - smaller than before
-    minLat -= buffer;
-    maxLat += buffer;
-    minLng -= buffer;
-    maxLng += buffer;
-    
-    // Create Overpass API query
-    const overpassQuery = buildOverpassQuery(minLat, minLng, maxLat, maxLng, poiTypesToSearch);
-    
-    console.log("Overpass Query:", overpassQuery);
-    
-    // Store route and endpoints for filtering
-    const routeData = {
-        route: routePoints,
-        sourcePos: sourcePos,
-        destPos: destPos
-    };
-    
-    // Fetch data from Overpass API
-    fetchOverpassData(overpassQuery)
-        .then(pois => {
-            console.log("Retrieved POIs:", pois);
-            // Filter POIs by proximity to route before displaying
-            const filteredPois = filterPOIsByProximity(pois, routeData);
-            displayPOIs(filteredPois);
-        })
-        .catch(error => {
-            console.error('Error fetching POIs:', error);
-            document.getElementById('poiContainer').innerHTML = 
-                '<div class="poi-loading">Error loading points of interest. Please try again.</div>';
-            
-            // Fallback to synthetic POIs for demo purposes
-            console.log("Falling back to synthetic POIs for demo");
-            const syntheticPois = generateSyntheticPOIs(routePoints, poiTypesToSearch);
-            const filteredSyntheticPois = filterPOIsByProximity(syntheticPois, routeData);
-            displayPOIs(filteredSyntheticPois);
-        });
-}
-
-// Filter POIs by proximity to route or source/destination
-function filterPOIsByProximity(pois, routeData) {
-    // Maximum distance (in km) a POI can be from the route to be included
-    const MAX_DISTANCE_TO_ROUTE = 0.08; 
-    
-    // Maximum distance (in km) a POI can be from source/destination
-    const MAX_DISTANCE_TO_ENDPOINT = 0.04; 
-    
-    return pois.filter(poi => {
-        // First check if this is one of our desired POI types
-        const allowedTypes = ['restaurant', 'cafe', 'hotel', 'hospital', 'school', 'atm'];
-        if (!allowedTypes.includes(poi.type)) {
-            return false;
-        }
-        
-        // Check if POI is near source or destination
-        const sourceDistance = calculateDistance(
-            poi.lat, poi.lng, 
-            routeData.sourcePos.lat, routeData.sourcePos.lng
-        );
-        
-        const destDistance = calculateDistance(
-            poi.lat, poi.lng, 
-            routeData.destPos.lat, routeData.destPos.lng
-        );
-        
-        // If close to source or destination, include it
-        if (sourceDistance <= MAX_DISTANCE_TO_ENDPOINT || destDistance <= MAX_DISTANCE_TO_ENDPOINT) {
-            return true;
-        }
-        
-        // Otherwise, check distance to route
-        let minDistanceToRoute = Infinity;
-        
-        // For each segment of the route, calculate distance to the POI
-        for (let i = 0; i < routeData.route.length - 1; i++) {
-            const segmentStart = routeData.route[i];
-            const segmentEnd = routeData.route[i + 1];
-            
-            const distance = distanceToSegment(
-                poi.lat, poi.lng,
-                segmentStart[0], segmentStart[1],
-                segmentEnd[0], segmentEnd[1]
-            );
-            
-            minDistanceToRoute = Math.min(minDistanceToRoute, distance);
-        }
-        
-        return minDistanceToRoute <= MAX_DISTANCE_TO_ROUTE;
-    });
-}
-
-// Helper function to calculate distance between two points in km (Haversine formula)
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    const d = R * c; // Distance in km
-    return d;
-}
-
-function deg2rad(deg) {
-    return deg * (Math.PI/180);
-}
-
-// Calculate distance from point to a line segment
-function distanceToSegment(pointLat, pointLng, lineLat1, lineLng1, lineLat2, lineLng2) {
-    // Convert to x,y coordinates for easier math
-    const x = pointLat;
-    const y = pointLng;
-    const x1 = lineLat1;
-    const y1 = lineLng1;
-    const x2 = lineLat2;
-    const y2 = lineLng2;
-    
-    // Calculate the squared length of the line segment
-    const lengthSquared = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
-    
-    // If segment is just a point, return distance to that point
-    if (lengthSquared === 0) return calculateDistance(pointLat, pointLng, lineLat1, lineLng1);
-    
-    // Calculate projection scalar parameter t
-    const t = Math.max(0, Math.min(1, (
-        ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / lengthSquared
-    )));
-    
-    // Calculate nearest point on segment
-    const projX = x1 + t * (x2 - x1);
-    const projY = y1 + t * (y2 - y1);
-    
-    // Return distance from point to this projection point
-    return calculateDistance(pointLat, pointLng, projX, projY);
-}
-
-
-// Build the Overpass API query based on bounding box and POI types
-function buildOverpassQuery(minLat, minLng, maxLat, maxLng, poiTypes) {
-    // Create the bounding box string
-    const bbox = `${minLat},${minLng},${maxLat},${maxLng}`;
-    
-    // Start building the query parts
-    let queryParts = [];
-    
-    // Convert our application POI types to Overpass tags
-    // Only include the specific types we want
-    poiTypes.forEach(type => {
-        switch(type) {
-            case 'restaurant':
-                queryParts.push('node["amenity"="restaurant"](' + bbox + ');');
-                queryParts.push('way["amenity"="restaurant"](' + bbox + ');');
-                break;
-            case 'cafe':
-                queryParts.push('node["amenity"="cafe"](' + bbox + ');');
-                queryParts.push('way["amenity"="cafe"](' + bbox + ');');
-                break;
-            case 'hotel':
-                queryParts.push('node["tourism"="hotel"](' + bbox + ');');
-                queryParts.push('way["tourism"="hotel"](' + bbox + ');');
-                break;
-            case 'atm':
-                queryParts.push('node["amenity"="atm"](' + bbox + ');');
-                break;
-            case 'hospital':
-                queryParts.push('node["amenity"="hospital"](' + bbox + ');');
-                queryParts.push('way["amenity"="hospital"](' + bbox + ');');
-                break;
-            case 'school':
-                queryParts.push('node["amenity"="school"](' + bbox + ');');
-                queryParts.push('way["amenity"="school"](' + bbox + ');');
-                break;
-        }
-    });
-    
-    // Construct the complete Overpass query
-    return `
-        [out:json][timeout:60];
-        (
-            ${queryParts.join('\n            ')}
-        );
-        out body;
-        >;
-        out skel qt;
-    `;
-}
-
-// Fetch data from Overpass API
-async function fetchOverpassData(query) {
-    const overpassUrl = 'https://overpass-api.de/api/interpreter';
-    
-    try {
-        const response = await fetch(overpassUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'data=' + encodeURIComponent(query)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // Process the Overpass API response into our POI format
-        return processOverpassResponse(data);
-    } catch (error) {
-        console.error('Error fetching data from Overpass API:', error);
-        throw error;
-    }
-}
-
-// Process Overpass API response into our POI format
-function processOverpassResponse(data) {
-    const pois = [];
-    
-    if (data && data.elements) {
-        console.log(`Received ${data.elements.length} elements from Overpass API`);
-        
-        // First, process all nodes
-        const nodes = {};
-        data.elements.forEach(element => {
-            if (element.type === 'node') {
-                nodes[element.id] = {
-                    lat: element.lat,
-                    lon: element.lon,
-                    tags: element.tags || {}
-                };
-            }
-        });
-        
-        // Then, process all elements to extract POIs
-        data.elements.forEach((element, index) => {
-            // Only process elements with tags
-            if (!element.tags) return;
-            
-            // Determine coordinates based on element type
-            let lat, lng;
-            let validGeometry = false;
-            
-            if (element.type === 'node') {
-                lat = element.lat;
-                lng = element.lon;
-                validGeometry = true;
-            } else if (element.type === 'way' && element.nodes && element.nodes.length > 0) {
-                // For ways, use the first node's coordinates if available
-                const firstNodeId = element.nodes[0];
-                if (nodes[firstNodeId]) {
-                    lat = nodes[firstNodeId].lat;
-                    lng = nodes[firstNodeId].lon;
-                    validGeometry = true;
-                }
-            }
-            
-            // Skip elements without valid geometry
-            if (!validGeometry) return;
-            
-            // Determine POI type - only include our desired types
-            let poiType = null; // Default to null, will be filtered out
-            
-            if (element.tags.amenity === 'restaurant') {
-                poiType = 'restaurant';
-            } else if (element.tags.amenity === 'cafe') {
-                poiType = 'cafe';
-            } else if (element.tags.tourism === 'hotel') {
-                poiType = 'hotel';
-            } else if (element.tags.amenity === 'atm') {
-                poiType = 'atm';
-            } else if (element.tags.amenity === 'hospital') {
-                poiType = 'hospital';
-            } else if (element.tags.amenity === 'school') {
-                poiType = 'school';
-            }
-            
-            // Skip if not one of our desired POI types
-            if (!poiType) return;
-            
-            // Get name (or generate a default if missing)
-            const name = element.tags.name || 
-                         element.tags['name:en'] || 
-                         `${poiType.charAt(0).toUpperCase() + poiType.slice(1)} #${index + 1}`;
-            
-            // Extract address components
-            const street = element.tags['addr:street'] || '';
-            const housenumber = element.tags['addr:housenumber'] || '';
-            const city = element.tags['addr:city'] || element.tags.city || 'Nearby';
-            
-            // Create address string
-            let address = '';
-            if (housenumber && street) {
-                address = `${housenumber} ${street}, ${city}`;
-            } else if (street) {
-                address = `${street}, ${city}`;
-            } else {
-                address = city;
-            }
-            
-            // Add a default rating for display
-            const rating = element.tags.rating || ((Math.random() * 2) + 3).toFixed(1);
-            
-            // Create POI object
-            pois.push({
-                id: `poi-${element.type}-${element.id}`,
-                name: name,
-                type: poiType,
-                lat: lat,
-                lng: lng,
-                address: address,
-               
-            });
-        });
-    }
-    
-    console.log(`Processed ${pois.length} POIs from API response`);
-    return pois;
-}
-
-// Display POIs on the map and in the sidebar
-function displayPOIs(pois) {
-    const poiContainer = document.getElementById('poiContainer');
-    
-    // Clear previous content
-    poiContainer.innerHTML = '';
-    
-    // If no POIs found
-    if (pois.length === 0) {
-        poiContainer.innerHTML = '<div class="poi-loading">No points of interest found near your route.</div>';
+    if (!graph || Object.keys(graph).length === 0) {
+        console.error('❌ Graph not available for Dijkstra');
+        showLocationNotification('Road network not loaded. Cannot calculate route.', 'error');
+        hideLoadingIndicator();
         return;
     }
     
-    // Add heading
-    poiContainer.innerHTML = `<h3>Points of Interest (${pois.length})</h3>`;
+    // Find nearest nodes
+    const sourceNode = findNearestNode(sourcePos);
+    const destNode = findNearestNode(destPos);
     
-    // Create POI list
-    const poiList = document.createElement('ul');
-    poiList.className = 'poi-list';
+    if (!sourceNode || !destNode) {
+        console.error('❌ Could not find nearest nodes');
+        showLocationNotification('Could not find nearby roads for routing.', 'error');
+        hideLoadingIndicator();
+        return;
+    }
     
-    // Add POIs to list and map
-    pois.forEach(poi => {
-        // Create list item for sidebar
-        const poiItem = document.createElement('li');
-        poiItem.className = 'poi-item';
-        poiItem.dataset.poiId = poi.id;
-        
-        poiItem.innerHTML = `
-            <div class="poi-name">${poi.name}</div>
-            <div class="poi-address">${poi.address}</div>
-          
-            <div class="poi-type">${poi.type.charAt(0).toUpperCase() + poi.type.slice(1)}</div>
-            <button class="poi-directions-btn">Get Directions</button>
-        `;
-        
-        // Add event listener for clicking on the POI item
-        poiItem.addEventListener('click', function() {
-            // Remove selected class from all POIs
-            document.querySelectorAll('.poi-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked POI
-            this.classList.add('selected');
-            
-            // Center map on POI
-            map.setView([poi.lat, poi.lng], 17);
-            
-            // Open the popup for this POI
-            const marker = markers.find(m => m.poiId === poi.id);
-            if (marker) {
-                marker.openPopup();
-            }
-        });
-        
-        // Add event listener for directions button
-        poiItem.querySelector('.poi-directions-btn').addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent triggering the parent's click event
-            
-            // Set as destination
-            document.getElementById('destinationLocation').value = '';
-            placeMarker({ lat: poi.lat, lng: poi.lng }, 'destination');
-            
-            // Calculate route if source is already set
-            if (sourceMarker) {
-                handleFindPathClick();
-            } else {
-                alert('Please select a source location first');
-            }
-        });
-        
-        // Add to list
-        poiList.appendChild(poiItem);
-        
-        // Create marker for the map
-        const marker = L.marker([poi.lat, poi.lng], {
-            icon: poiTypeIcons[poi.type] || markerIcons.poi
-        }).addTo(map);
-        
-        // Add ID to marker for reference
-        marker.poiId = poi.id;
-        
-        // Create popup for the marker
-        const popupContent = document.createElement('div');
-        popupContent.className = 'poi-info-window';
-        popupContent.innerHTML = `
-            <h3>${poi.name}</h3>
-            <p>${poi.address}</p>
-            <p>Type: ${poi.type.charAt(0).toUpperCase() + poi.type.slice(1)}</p>
-            <button class="set-as-destination">Set as Destination</button>
-        `;
-        
-        // Bind popup to marker
-        marker.bindPopup(popupContent);
-        
-        // Add event listener for popup open
-        marker.on('popupopen', function() {
-            // Add click handler for 'Set as Destination' button
-            document.querySelector('.set-as-destination').addEventListener('click', function() {
-                // Set as destination
-                document.getElementById('destinationLocation').value = '';
-                placeMarker({ lat: poi.lat, lng: poi.lng }, 'destination');
-                
-                // Calculate route if source is already set
-                if (sourceMarker) {
-                    handleFindPathClick();
-                } else {
-                    alert('Please select a source location first');
-                }
-                
-                // Close popup
-                marker.closePopup();
-            });
-        });
-        
-        // Add marker to global array
-        markers.push(marker);
+    // Run Dijkstra algorithm
+    const result = dijkstra(graph, sourceNode.id, destNode.id);
+    
+    if (result.path.length === 0) {
+        console.warn('⚠️ No path found with Dijkstra');
+        showLocationNotification('No route found between selected locations.', 'error');
+        hideLoadingIndicator();
+        return;
+    }
+    
+    // Display route
+    displayLocalRoute(result, 'Dijkstra');
+    
+    console.log(`✅ Dijkstra route calculated: ${result.distance.toFixed(2)}km`);
+    hideLoadingIndicator();
+}
+
+function calculateRouteWithAStar(sourcePos, destPos) {
+    console.log('⭐ Calculating route with A* algorithm...');
+    
+    if (!graph || Object.keys(graph).length === 0) {
+        console.error('❌ Graph not available for A*');
+        showLocationNotification('Road network not loaded. Cannot calculate route.', 'error');
+        hideLoadingIndicator();
+        return;
+    }
+    
+    // Find nearest nodes
+    const sourceNode = findNearestNode(sourcePos);
+    const destNode = findNearestNode(destPos);
+    
+    if (!sourceNode || !destNode) {
+        console.error('❌ Could not find nearest nodes');
+        showLocationNotification('Could not find nearby roads for routing.', 'error');
+        hideLoadingIndicator();
+        return;
+    }
+    
+    // Run A* algorithm
+    const result = aStar(graph, sourceNode.id, destNode.id);
+    
+    if (result.path.length === 0) {
+        console.warn('⚠️ No path found with A*');
+        showLocationNotification('No route found between selected locations.', 'error');
+        hideLoadingIndicator();
+        return;
+    }
+    
+    // Display route
+    displayLocalRoute(result, 'A* (A-Star)');
+    
+    console.log(`✅ A* route calculated: ${result.distance.toFixed(2)}km`);
+    hideLoadingIndicator();
+}
+
+function displayLocalRoute(routeResult, algorithmName) {
+    routeLayer.clearLayers();
+    
+    if (!routeResult.path || routeResult.path.length === 0) {
+        console.warn('⚠️ Empty route path received');
+        return;
+    }
+    
+    // Convert node IDs to coordinates
+    const routeCoordinates = routeResult.path.map(nodeId => {
+        const node = graph[nodeId];
+        return node ? [node.lat, node.lng] : null;
+    }).filter(coord => coord !== null);
+    
+    if (routeCoordinates.length < 2) {
+        console.warn('⚠️ Insufficient route coordinates');
+        return;
+    }
+    
+    // Create route polyline
+    const routePolyline = L.polyline(routeCoordinates, {
+        color: algorithmName.includes('A*') ? '#FF6B6B' : '#4ECDC4',
+        weight: 5,
+        opacity: 0.8
+    }).addTo(routeLayer);
+    
+    // Add route markers for intermediate waypoints
+    routeResult.path.forEach((nodeId, index) => {
+        const node = graph[nodeId];
+        if (node && index > 0 && index < routeResult.path.length - 1) {
+            // Add small waypoint markers
+            L.circleMarker([node.lat, node.lng], {
+                color: '#FFF',
+                fillColor: algorithmName.includes('A*') ? '#FF6B6B' : '#4ECDC4',
+                weight: 2,
+                radius: 4,
+                fillOpacity: 0.8
+            }).addTo(routeLayer);
+        }
     });
     
-    // Add POI list to container
-    poiContainer.appendChild(poiList);
-}
-        // Reset the map
-        function resetMap() {
-            // Clear route
-            routeLayer.clearLayers();
-            
-            // Remove markers
-            markers.forEach(marker => {
-                map.removeLayer(marker);
-            });
-            
-            // Reset markers array
-            markers = [];
-            sourceMarker = null;
-            destinationMarker = null;
-            
-            // Clear route info
-            document.getElementById('routeInfo').innerHTML = '';
-            
-            // Clear POI container
-            document.getElementById('poiContainer').innerHTML = '';
-            
-            // Reset dropdowns
-            document.getElementById('sourceLocation').value = '';
-            document.getElementById('destinationLocation').value = '';
-            
-            // Reset center and zoom
-            map.setView(HALDWANI_CENTER, HALDWANI_ZOOM);
-        }
-
-        // Fix the setupComparisonNavigation function with correct variable names
-function setupComparisonNavigation() {
-    const compareBtn = document.getElementById('compareBtn');
-    console.log('Setting up comparison navigation, button found:', !!compareBtn);
+    // Fit map to route
+    map.fitBounds(routePolyline.getBounds(), { padding: [20, 20] });
     
-    if (compareBtn) {
-        // Remove any existing event listeners by cloning the button
-        const newCompareBtn = compareBtn.cloneNode(true);
-        compareBtn.parentNode.replaceChild(newCompareBtn, compareBtn);
-        
-        newCompareBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Compare button clicked!');
-            console.log('sourceMarker:', !!sourceMarker);
-            console.log('destinationMarker:', !!destinationMarker);
-            
-            // Check if we have both source and destination
-            if (sourceMarker && destinationMarker) {
-                try {
-                    // Get coordinates
-                    const sourceLat = sourceMarker.getLatLng().lat;
-                    const sourceLng = sourceMarker.getLatLng().lng;
-                    const destLat = destinationMarker.getLatLng().lat;
-                    const destLng = destinationMarker.getLatLng().lng;
-                    
-                    // Use currentRouteMode (not currentTransportMode) as that's what your code uses
-                    const transportMode = currentRouteMode || 'driving';
-                    
-                    // Store in localStorage for comparison page to access
-                    const sourceData = JSON.stringify({lat: sourceLat, lng: sourceLng});
-                    const destData = JSON.stringify({lat: destLat, lng: destLng});
-                    
-                    localStorage.setItem('travelMateSourceLocation', sourceData);
-                    localStorage.setItem('travelMateDestLocation', destData);
-                    localStorage.setItem('travelMateTransportMode', transportMode);
-                    
-                    // Debug: Log what we're storing
-                    console.log('Storing source:', sourceData);
-                    console.log('Storing destination:', destData);
-                    console.log('Storing transport mode:', transportMode);
-                    
-                    // Verify storage immediately
-                    console.log('Verification:');
-                    console.log('Source stored:', localStorage.getItem('travelMateSourceLocation'));
-                    console.log('Dest stored:', localStorage.getItem('travelMateDestLocation'));
-                    console.log('Mode stored:', localStorage.getItem('travelMateTransportMode'));
-                    
-                    // Navigate to compare page
-                    console.log('Navigating to compare.html...');
-                    window.location.href = 'compare.html';
-                    
-                } catch (error) {
-                    console.error('Error storing data:', error);
-                    alert('Error preparing comparison data: ' + error.message);
-                }
-            } else {
-                console.log('Missing markers - showing alert');
-                alert('Please select both source and destination locations first.');
-            }
-        });
-        
-        console.log('Compare button event listener attached successfully');
-    } else {
-        console.error('Compare button not found in DOM!');
+    // Calculate estimated duration (assuming average speed)
+    const avgSpeed = currentRouteMode === 'walking' ? 5 : 
+                    currentRouteMode === 'cycling' ? 15 : 50; // km/h
+    const estimatedDuration = Math.round((routeResult.distance / avgSpeed) * 60);
+    
+    // Display route information
+    displayRouteInfo({
+        distance: routeResult.distance.toFixed(2),
+        duration: estimatedDuration,
+        algorithm: algorithmName,
+        mode: currentRouteMode,
+        nodesVisited: routeResult.nodesVisited || routeResult.path.length
+    });
+}
+
+function displayRouteInfo(routeInfo) {
+    const routeInfoDiv = document.getElementById('routeInfo');
+    if (!routeInfoDiv) {
+        console.warn('⚠️ Route info div not found');
+        return;
+    }
+    
+    const modeEmoji = {
+        'driving': '🚗',
+        'walking': '🚶',
+        'cycling': '🚴'
+    };
+    
+    routeInfoDiv.innerHTML = `
+        <div class="route-info-content">
+            <h3>${modeEmoji[routeInfo.mode] || '🚗'} Route Information</h3>
+            <div class="route-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Distance:</span>
+                    <span class="stat-value">${routeInfo.distance} km</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Duration:</span>
+                    <span class="stat-value">${routeInfo.duration} min</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Algorithm:</span>
+                    <span class="stat-value">${routeInfo.algorithm}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Mode:</span>
+                    <span class="stat-value">${routeInfo.mode}</span>
+                </div>
+                ${routeInfo.nodesVisited ? `
+                <div class="stat-item">
+                    <span class="stat-label">Nodes:</span>
+                    <span class="stat-value">${routeInfo.nodesVisited}</span>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    routeInfoDiv.style.display = 'block';
+}
+
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
     }
 }
-// Your showAllLocations function (REMOVE the setupComparisonNavigation from inside this function)
+
+
+
+
+
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
+function resetMap() {
+    console.log('🔄 Resetting map...');
+    
+    // Clear markers
+    if (sourceMarker) {
+        map.removeLayer(sourceMarker);
+        sourceMarker = null;
+    }
+    
+    if (destinationMarker) {
+        map.removeLayer(destinationMarker);
+        destinationMarker = null;
+    }
+    
+    // Clear route
+    if (routeLayer) {
+        routeLayer.clearLayers();
+    }
+    
+    // Clear dropdowns
+    const sourceDropdown = document.getElementById('sourceLocation');
+    const destDropdown = document.getElementById('destinationLocation');
+    
+    if (sourceDropdown) sourceDropdown.value = '';
+    if (destDropdown) destDropdown.value = '';
+    
+    // Hide route info
+    const routeInfoDiv = document.getElementById('routeInfo');
+    if (routeInfoDiv) {
+        routeInfoDiv.style.display = 'none';
+    }
+    
+    // Reset cursor
+    map.getContainer().style.cursor = 'crosshair';
+    
+    // Clear stored data
+    storedLocationData = {
+        sourceLocation: null,
+        destLocation: null,
+        transportMode: 'driving'
+    };
+    
+    // Hide loading indicator
+    hideLoadingIndicator();
+    
+    showLocationNotification('Map reset. Click to select new locations.', 'info');
+    console.log('✅ Map reset complete');
+}
+
 function showAllLocations() {
-    // Clear previous markers (except source and destination)
-    markers.forEach(marker => {
-        if (marker !== sourceMarker && marker !== destinationMarker) {
-            map.removeLayer(marker);
+    console.log('📍 Showing all locations on map...');
+    
+    if (!haldwaniData || !haldwaniData.nodes || haldwaniData.nodes.length === 0) {
+        showLocationNotification('No location data available to display.', 'error');
+        return;
+    }
+    
+    // Clear existing route to show locations better
+    if (routeLayer) {
+        routeLayer.clearLayers();
+    }
+    
+    // Create a temporary layer for location markers
+    const locationLayer = L.layerGroup().addTo(map);
+    
+    // Get unique locations by name
+    const uniqueLocations = new Map();
+    haldwaniData.nodes.forEach(node => {
+        const key = node.name.toLowerCase();
+        if (!uniqueLocations.has(key) && node.name !== "Unnamed Road") {
+            uniqueLocations.set(key, node);
         }
     });
     
-    // Keep only source and destination markers
-    markers = markers.filter(marker => marker === sourceMarker || marker === destinationMarker);
+    // Add markers for unique locations
+    const locations = Array.from(uniqueLocations.values()).slice(0, 50); // Limit to 50 for performance
     
-    // Add markers for all nodes
-    haldwaniData.nodes.forEach(node => {
-        // Create marker
-        const marker = L.marker([node.lat, node.lng], {
-            icon: markerIcons.poi
-        }).addTo(map);
+    locations.forEach(location => {
+        const marker = L.circleMarker([location.lat, location.lng], {
+            color: '#2196F3',
+            fillColor: '#4CAF50',
+            weight: 2,
+            radius: 6,
+            fillOpacity: 0.7
+        }).addTo(locationLayer);
         
-        // Create popup
-        const popupContent = document.createElement('div');
-        popupContent.className = 'location-info-window';
-        popupContent.innerHTML = `
-            <h3>${node.name}</h3>
-            <p>Latitude: ${node.lat.toFixed(6)}</p>
-            <p>Longitude: ${node.lng.toFixed(6)}</p>
-            <button class="set-as-source">Set as Source</button>
-            <button class="set-as-destination">Set as Destination</button>
-        `;
-        
-        // Bind popup to marker
-        marker.bindPopup(popupContent);
-        
-        // Add event listener for popup open
-        marker.on('popupopen', function() {
-            // Add click handler for 'Set as Source' button
-            document.querySelector('.set-as-source').addEventListener('click', function() {
-                document.getElementById('sourceLocation').value = node.id;
-                updateSelectedLocation('source', node.id);
-                marker.closePopup();
-            });
-            
-            // Add click handler for 'Set as Destination' button
-            document.querySelector('.set-as-destination').addEventListener('click', function() {
-                document.getElementById('destinationLocation').value = node.id;
-                updateSelectedLocation('destination', node.id);
-                marker.closePopup();
-            });
-        });
-        
-        // Add to markers array
-        markers.push(marker);
+        marker.bindPopup(`
+            <div class="location-popup">
+                <h4>${location.name}</h4>
+                <p><strong>Coordinates:</strong><br>${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
+                <button onclick="selectLocationFromPopup('${location.id}', 'source')" class="popup-btn">Set as Source</button>
+                <button onclick="selectLocationFromPopup('${location.id}', 'destination')" class="popup-btn">Set as Destination</button>
+            </div>
+        `);
     });
     
-    // Create bounds to fit all markers
-    const bounds = L.latLngBounds(haldwaniData.nodes.map(node => [node.lat, node.lng]));
+    // Fit map to show all locations
+    if (locations.length > 0) {
+        const group = new L.featureGroup(locationLayer.getLayers());
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
     
-    // Fit map to bounds
-    map.fitBounds(bounds, {
-        padding: [50, 50]
-    });
+    showLocationNotification(`Showing ${locations.length} unique locations. Click markers to select.`, 'success');
+    
+    // Auto-hide markers after 10 seconds
+    setTimeout(() => {
+        map.removeLayer(locationLayer);
+        showLocationNotification('Location markers hidden.', 'info');
+    }, 10000);
 }
 
-// Call setupComparisonNavigation() in your main initialization code
-// This should be called once when the page loads, typically in your DOMContentLoaded event or similar
-document.addEventListener('DOMContentLoaded', function() {
-    // ... your other initialization code ...
+// Global function for popup buttons
+window.selectLocationFromPopup = function(locationId, type) {
+    updateSelectedLocation(type, locationId);
     
-    // Initialize comparison navigation
-    setupComparisonNavigation();
+    // Close all popups
+    map.eachLayer(layer => {
+        if (layer.getPopup && layer.getPopup()) {
+            layer.closePopup();
+        }
+    });
+};
+
+// Add CSS animations for notifications
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
     
-   
-});
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .popup-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        margin: 2px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .popup-btn:hover {
+        background: #1976D2;
+    }
+    
+    .location-popup h4 {
+        margin: 0 0 8px 0;
+        color: #333;
+    }
+    
+    .location-popup p {
+        margin: 8px 0;
+        font-size: 12px;
+        color: #666;
+    }
+`;
+document.head.appendChild(style);
+
+console.log('🎯 Travel Mate JavaScript loaded successfully');

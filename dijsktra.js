@@ -1,66 +1,28 @@
-// Calculation of dijkstra algo
-function calculateRouteWithDijkstra(sourcePos, destPos) {
-    const sourceNode = findNearestNode(sourcePos);
-    const destNode = findNearestNode(destPos);
-    
-    if (!sourceNode || !destNode) {
-        alert('Could not find suitable road network near selected points.');
-        document.getElementById('loadingIndicator').style.display = 'none';
-        return;
-    }
-    
-    console.log(`Calculating route using Dijkstra's algorithm from ${sourceNode.name} to ${destNode.name}`);
-    
-    // Run Dijkstra's algorithm
-    const { distance, path } = dijkstraShortestPath(sourceNode.id, destNode.id);
-    
-    if (!path || path.length === 0) {
-        alert('Could not find a path between the selected locations.');
-        document.getElementById('loadingIndicator').style.display = 'none';
-        return;
-    }
-    
-    // Convert path to route points
-    const routePoints = path.map(nodeId => {
-        const node = graph[nodeId];
-        return [node.lat, node.lng];
-    });
-    
-    //cal ulate route distance in km
-    let speedFactor;
-    switch (currentRouteMode) {
-        case 'walking':
-            speedFactor = 5;
-            break;
-        case 'cycling':
-            speedFactor = 15; // km/h for cycling
-            break;
-        case 'driving':
-        default:
-            speedFactor = 30; // km/h for driving
-            break;
-    }
-    
-    //cALCULATE distance in km
-    const duration = (distance / speedFactor) * 60;
-    
-//it is for displaying the specifid route
-    displayRoute({
-        distance: distance,
-        duration: duration,
-        points: routePoints
-    });
-    
-   
-    document.getElementById('loadingIndicator').style.display = 'none';
-}
+// ========================================
+// DIJKSTRA'S ALGORITHM IMPLEMENTATION
+// ========================================
 
-// Dijkstra's algo ,for finding shortes path 
-function dijkstraShortestPath(startNodeId, endNodeId) {
-   
+/**
+ * Dijkstra's algorithm for finding shortest path between two nodes
+ * @param {Object} graph - The graph object with nodes and neighbors
+ * @param {string} startNodeId - Starting node ID
+ * @param {string} endNodeId - Ending node ID
+ * @returns {Object} - {path: Array, distance: number, nodesVisited: number}
+ */
+function dijkstra(graph, startNodeId, endNodeId) {
+    console.log(`🔍 Running Dijkstra's algorithm from ${startNodeId} to ${endNodeId}`);
+    
+    // Validate inputs
+    if (!graph || !graph[startNodeId] || !graph[endNodeId]) {
+        console.error('❌ Invalid graph or node IDs for Dijkstra');
+        return { path: [], distance: Infinity, nodesVisited: 0 };
+    }
+    
+    // Initialize data structures
     const distances = {};
     const previous = {};
     const unvisited = new Set();
+    let nodesVisited = 0;
     
     // Initialize all distances as Infinity and add all nodes to unvisited set
     Object.keys(graph).forEach(nodeId => {
@@ -69,12 +31,12 @@ function dijkstraShortestPath(startNodeId, endNodeId) {
         unvisited.add(nodeId);
     });
     
-   
+    // Starting node has distance 0
     distances[startNodeId] = 0;
     
-    
+    // Main algorithm loop
     while (unvisited.size > 0) {
-        // Find the unvisitd  node with the smallest distance
+        // Find the unvisited node with the smallest distance
         let currentNodeId = null;
         let smallestDistance = Infinity;
         
@@ -85,44 +47,48 @@ function dijkstraShortestPath(startNodeId, endNodeId) {
             }
         }
         
-        // If  we find that the smallest distance is Infinity, there's no path to destination,simply break
+        // If smallest distance is Infinity, no path exists
         if (smallestDistance === Infinity) {
+            console.warn('⚠️ No path found with Dijkstra - unreachable nodes');
             break;
         }
         
-        // If we've reached the end node, we're done
+        // If we've reached the destination, we can stop
         if (currentNodeId === endNodeId) {
+            console.log('✅ Dijkstra reached destination');
             break;
         }
         
-        
+        // Mark current node as visited
         unvisited.delete(currentNodeId);
+        nodesVisited++;
         
         // Check all neighbors of current node
         const currentNode = graph[currentNodeId];
-        
-        for (const neighbor of currentNode.neighbors) {
-            //CHECK IF NEIGHBOUR IS UNVISITED 
-            if (unvisited.has(neighbor.id)) {
-                
-                const tentativeDistance = distances[currentNodeId] + neighbor.distance;
-                
-                // Update if this path is shorter
-                if (tentativeDistance < distances[neighbor.id]) {
-                    distances[neighbor.id] = tentativeDistance;
-                    previous[neighbor.id] = currentNodeId;
+        if (currentNode && currentNode.neighbors) {
+            for (const neighbor of currentNode.neighbors) {
+                // Only process unvisited neighbors
+                if (unvisited.has(neighbor.id)) {
+                    const tentativeDistance = distances[currentNodeId] + neighbor.distance;
+                    
+                    // Update if this path is shorter
+                    if (tentativeDistance < distances[neighbor.id]) {
+                        distances[neighbor.id] = tentativeDistance;
+                        previous[neighbor.id] = currentNodeId;
+                    }
                 }
             }
         }
     }
     
-    // ReconstructING  the path
+    // Reconstruct the path
     const path = [];
     let current = endNodeId;
     
-    
+    // Check if destination is reachable
     if (previous[endNodeId] === null && endNodeId !== startNodeId) {
-        return { distance: Infinity, path: [] };
+        console.warn('⚠️ No path found with Dijkstra - destination unreachable');
+        return { path: [], distance: Infinity, nodesVisited };
     }
     
     // Build the path backwards
@@ -131,5 +97,29 @@ function dijkstraShortestPath(startNodeId, endNodeId) {
         current = previous[current];
     }
     
-    return { distance: distances[endNodeId], path };
+    const finalDistance = distances[endNodeId];
+    console.log(`✅ Dijkstra complete: ${path.length} nodes, ${finalDistance.toFixed(2)}km, visited ${nodesVisited} nodes`);
+    
+    return { 
+        path, 
+        distance: finalDistance, 
+        nodesVisited 
+    };
 }
+
+/**
+ * Alternative implementation for backward compatibility
+ * @param {string} startNodeId - Starting node ID
+ * @param {string} endNodeId - Ending node ID
+ * @returns {Object} - {path: Array, distance: number}
+ */
+function dijkstraShortestPath(startNodeId, endNodeId) {
+    const result = dijkstra(graph, startNodeId, endNodeId);
+    return {
+        path: result.path,
+        distance: result.distance
+    };
+}
+
+
+console.log('📚 Dijkstra algorithm module loaded');
